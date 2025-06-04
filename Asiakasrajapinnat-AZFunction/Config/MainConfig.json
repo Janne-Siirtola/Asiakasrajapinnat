@@ -1,0 +1,105 @@
+{
+    "customer_config_path": "CustomerConfig",
+    "src_container_prefix": "Rajapinta/",
+    "base_columns": {
+        "TAPAsnro": {
+            "name": "Asiakasnro", 
+            "dtype": "string"
+        },
+        "PARDName1": {
+            "name": "Tyhjennyskohde", 
+            "dtype": "string"
+        },
+        "PARDName4": {
+            "name": "Osoite", 
+            "dtype": "string"
+        },
+        "TAPPvm": {
+            "name": "Pvm", 
+            "dtype": "string"
+        },
+        "TAPKlo": {
+            "name": "Kello", 
+            "dtype": "string"
+        },
+        "TAPTyyppi": {
+            "name": "Tyyppi", 
+            "dtype": "string"
+        },
+        "TAPNimi": {
+            "name": "Nimike", 
+            "dtype": "string"
+        },
+        "TYPTRyhma": {
+            "name": "Tuoteryhma", 
+            "dtype": "string"
+        },
+        "TAPMaara": {
+            "name": "Maara", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPHinta": {
+            "name": "Hinta", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPKasit": {
+            "name": "Jkmaksu", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPPaino": {
+            "name": "Paino", 
+            "dtype": "float",
+            "decimals": 3
+        },
+        "TAPYht": {
+            "name": "Yhteensa", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPUrakoit": {
+            "name": "Urakoitsija", 
+            "dtype": "string"
+        },
+        "TAPKierPros": {
+            "name": "Materiaalihyotyaste", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPHyoPros": {
+            "name": "Energiahyotyaste", 
+            "dtype": "float",
+            "decimals": 2
+        },
+        "TAPOJHK": {
+            "name": "Kasittelytapa", 
+            "dtype": "string"
+        },
+        "TAPJKoodi": {
+            "name": "EWCkoodi", 
+            "dtype": "string"
+        },
+        "PARConcern": {
+            "name": "Konserninumero", 
+            "dtype": "string"
+        },
+        "PARMark": {
+            "name": "Viite", 
+            "dtype": "string"
+        },
+        "PARName1": {
+            "name": "Maksaja", 
+            "dtype": "string"
+        },
+        "TAPKaatop": {
+            "name": "VopKoodi", 
+            "dtype": "string"
+        },
+        "TAPKaatopDefinition": {
+            "name": "Vastaanottopaikka", 
+            "dtype": "string"
+        }
+    }
+}

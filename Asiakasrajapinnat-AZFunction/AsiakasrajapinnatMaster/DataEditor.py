@@ -1,0 +1,147 @@
+import json
+from typing import Dict, Union
+# from azure.storage.blob import BlobServiceClient
+import numpy as np
+import pandas as pd
+import logging
+
+from .Customer import Customer
+
+class DataEditor:
+    def __init__(self, df: pd.DataFrame, customer: Customer):
+        self.df = df.copy()
+        self.customer = customer
+
+        self.target_row_count = len(self.df) - 1
+        
+        self.rename_map = customer.rename_map
+        self.dtype_map = customer.dtype_map
+        self.decimals_map = customer.decimals_map
+        self.combined_columns = customer.combined_columns
+        self.allowed_columns = customer.allowed_columns
+
+
+        self.weight_column = self.df['TAPPaino']
+        
+
+    def delete_row(self, idx: int) -> "DataEditor":
+        self.df = self.df.drop(idx).reset_index(drop=True)
+        return self
+
+    def validate_concern_number(self) -> "DataEditor":
+        """
+        Validation step: ensure every non‐blank PARConcern value
+        (internal column name) is in customer.konserni.
+        If any value fails, abort with an error.
+        """
+        col = "PARConcern"
+        if col not in self.df.columns:
+            raise KeyError(f"Expected konserni-column '{col}' not found")
+
+        allowed = {str(i) for i in self.customer.konserni}
+        unique_vals = set(self.df[col])
+
+        if not unique_vals.issubset(allowed):
+            extra = unique_vals - allowed
+            raise ValueError(
+                f"Invalid konserni values found: {extra}")
+
+        # all good, return self unchanged
+        return self
+
+    def drop_unmapped_columns(self) -> "DataEditor":
+        to_drop = set(self.df.columns) - set(self.allowed_columns.keys())
+
+        self.df = self.df.drop(columns=to_drop)
+
+        if to_drop:
+            logging.info(f"Dropping unmapped columns: {to_drop}")
+
+        return self
+
+    def reorder_columns(self) -> "DataEditor":
+        ordered = [c for c in self.allowed_columns.keys()
+                   if c in self.df.columns]
+        self.df = self.df[ordered]
+        return self
+
+    def cast_and_round(self) -> "DataEditor":
+        """
+        Cast the DataFrame columns to their specified types and round them if necessary.
+        """
+        # 1) rename
+        self.df = self.df.rename(columns=self.rename_map)
+
+        # 2) cast datatypes
+        valid_dtypes = {
+            col: dt
+            for col, dt in self.dtype_map.items()
+            if col in self.df.columns
+        }
+        
+        for col, dt in valid_dtypes.items():
+            if col not in self.df.columns:
+                continue
+
+            series = self.df[col]
+
+            if dt.startswith('float') or dt in ('Float64',):
+                # normalize decimal separator
+                series = series.astype(str).str.replace(',', '.', regex=False)
+                self.df[col] = series.astype(float)
+                
+        return self
+
+    def validate_final_df(self) -> "DataEditor":
+        """
+        Validate the final DataFrame.
+        """
+        warning_logs = []
+        error_logs = []
+
+        # Check for missing columns
+        missing = [col for col in self.allowed_columns.values()
+                   if col not in self.df.columns]
+        if missing:
+            warning_logs.append(
+                f"These allowed columns were not found in the DataFrame: {missing}"
+            )
+        """ if not self.weight_column.equals(self.df['Paino']):
+            error_logs.append("Values in column 'Paino' do not match the original values.") """
+            
+        if self.df.empty:
+            error_logs.append("DataFrame is empty after processing")
+            
+        # Check for extra columns
+        extras = set(self.df.columns) - set(self.allowed_columns.values())
+        if extras:
+            error_logs.append(
+                f"Unexpected extra columns in final DataFrame: {sorted(extras)}")
+
+        # Check for duplicate column names
+        if len(self.df.columns) != len(self.df.columns.unique()):
+            error_logs.append(
+                "Duplicate column names detected in final DataFrame")
+
+        # Check the dataframe row count
+        current_row_count = len(self.df)
+        if current_row_count != self.target_row_count:
+            error_logs.append(
+                f"Row count mismatch: expected {self.target_row_count}, got {current_row_count}"
+            )
+
+        # Check for index integrity
+        if not self.df.index.is_unique:
+            error_logs.append("DataFrame index contains duplicates")
+        if list(self.df.index) != list(range(len(self.df))):
+            error_logs.append(
+                "DataFrame index is not a simple RangeIndex 0…n-1")
+
+        if error_logs:
+            raise ValueError(f"Customer: {self.customer.name},\n" + "\n".join(error_logs))
+
+        if warning_logs:
+            logging.warning(f"Customer: {self.customer.name},\n" + "\n".join(warning_logs))
+        
+        return self
+
