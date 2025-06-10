@@ -22,8 +22,9 @@ class Customer:
         file_format: str,
         extra_columns: Optional[Dict[str, Dict[str, str]]],
         enabled: bool,
-        base_columns,
-        log_func
+        base_columns: Dict[str, Dict[str, str]],
+        exclude_columns: Optional[list[str]] = None,
+        log_func: Optional[callable] = None
     ) -> None:
         
         self.name = name
@@ -35,6 +36,10 @@ class Customer:
         self.enabled = enabled
         
         self.base_columns = base_columns
+        self.exclude_columns = exclude_columns if exclude_columns else []
+        
+        for c in self.exclude_columns:
+            self.base_columns.pop(c)
         
         self.log = log_func
         

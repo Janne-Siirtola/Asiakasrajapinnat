@@ -7,8 +7,7 @@ from urllib.parse import parse_qs
 from AsiakasrajapinnatMaster.StorageHandler import StorageHandler
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-# version 1.13
-
+# version 1.18 (modified for “list all” + “edit single”)
 module_dir = os.path.dirname(__file__)
 templates_dir = os.path.join(module_dir, "templates")
 
@@ -17,40 +16,65 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml"])
 )
 
-def get_html_template() -> str:
-    """
-    Load the HTML form from the templates directory.
-
-    :return: HTML content as a string
-    """
-    index_html = os.path.join(templates_dir, "index.html")
-    try:
-        with open(index_html, "r", encoding="utf-8") as f:
-            return f.read()
-    except Exception as e:
-        logging.error(f"Failed to load HTML form: {e}")
-        raise
-
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("ServeConfig function processed a request.")
 
-    # 1) If GET → just return the HTML form
-    if req.method == "GET":
+    conf_stg = StorageHandler(container_name="asiakasrajapinnat")
 
+    # ────────────────
+    # 1) Handle GET requests
+    # ────────────────
+    if req.method == "GET":
+        # 1.a) If a specific customer “name” is given (for editing), load that JSON:
+        name_to_edit = req.params.get("name")
+        single_customer = None
+        if name_to_edit:
+            blob_path = f"CustomerConfig/{name_to_edit}.json"
+            try:
+                raw_json = conf_stg.download_blob(blob_path)
+                single_customer = json.loads(raw_json)
+            except Exception as e:
+                logging.warning(f"Could not load customer '{name_to_edit}': {e}")
+                single_customer = None  # leave it None if not found
+
+        # 1.b) Regardless, load _all_ customer JSONs into a list
+        customers = []
+        try:
+            for cfg_file in conf_stg.list_json_blobs("CustomerConfig"):
+                try:
+                    raw = conf_stg.download_blob(cfg_file)
+                    data = json.loads(raw)
+                    # Optionally, you can add the blob name or key so you know which is which:
+                    # e.g. data["_blob_name"] = cfg_file
+                    customers.append(data)
+                except Exception as e:
+                    logging.error(f"Failed to parse JSON from blob '{cfg_file}': {e}")
+                    continue
+        except Exception as e:
+            logging.error(f"Failed to list blobs under CustomerConfig/: {e}")
+
+        # 1.c) Render the same template, passing both “customers” list and optional “single_customer”
+        template = jinja_env.get_template("index.html")
+        rendered = template.render(
+            customers=customers,
+            customer=single_customer,
+            function_key=os.getenv("function_key")
+        )
         return func.HttpResponse(
-            get_html_template(),
+            rendered,
             status_code=200,
             mimetype="text/html"
         )
 
-    # 2) If POST → parse everything and build the JSON
+    # ────────────────────────────
+    # 2) Handle POST (create / update)
+    # ────────────────────────────
     elif req.method == "POST":
         try:
+            # 2.a) Parse form-encoded body
             try:
-                # Azure Functions HttpRequest gives us raw body bytes:
                 raw_body = req.get_body().decode("utf-8")
-                # Use parse_qs so that array‐style fields (e.g. extra_key[]) become Python lists
                 parsed = parse_qs(raw_body)
             except Exception as e:
                 logging.error(f"Failed to parse POST body: {e}")
@@ -60,17 +84,20 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     mimetype="application/json"
                 )
 
-            # 2.a) “enabled” is always True
+            # 2.b) Build the JSON structure
             enabled = True
 
-            # 2.b) name (string)
             name = parsed.get("name", [""])[0].strip().lower()
+            if not name:
+                return func.HttpResponse(
+                    json.dumps({"error": "Name is required"}),
+                    status_code=400,
+                    mimetype="application/json"
+                )
 
-            # 2.c) konserni → expect comma-separated numbers
             konserni_raw = parsed.get("konserni", [""])[0].strip()
             konserni_list = []
             if konserni_raw:
-                # Split on commas, strip whitespace, convert to int if possible
                 for part in konserni_raw.split(","):
                     part = part.strip()
                     if not part:
@@ -78,36 +105,27 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     try:
                         konserni_list.append(int(part))
                     except ValueError:
-                        # If it fails to convert, you can decide to (a) ignore it or (b) store as string.
-                        # Here, we’ll ignore non-numeric tokens.
-                        logging.warning(
-                            f"Ignoring non-numeric konserni token: '{part}'")
+                        logging.warning(f"Ignoring non-numeric konserni token: '{part}'")
                         continue
 
-            # 2.d) source_container & destination_container & file_format
             src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
             dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
             file_format = parsed.get("file_format", [""])[0].strip().lower()
 
-            # 2.e) extra_columns → arrays extra_key[], extra_name[], extra_dtype[]
             extra_keys = parsed.get("extra_key", [])
             extra_names = parsed.get("extra_name", [])
             extra_dtypes = parsed.get("extra_dtype", [])
-
             extra_columns = {}
-            # Zip them together. If lengths differ, zip stops at the shortest.
             for key, disp, dt in zip(extra_keys, extra_names, extra_dtypes):
                 key = key.strip()
                 disp = disp.strip()
                 dt = dt.strip()
-                # Only add if key is non-empty
                 if key:
                     extra_columns[key] = {
                         "name": disp,
                         "dtype": dt
                     }
 
-            # 2.f) exclude_columns → comma-separated list of keys
             exclude_raw = parsed.get("exclude_columns", [""])[0].strip()
             exclude_list = []
             if exclude_raw:
@@ -116,7 +134,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     if part:
                         exclude_list.append(part)
 
-            # 3) Build the final JSON structure exactly as requested
             result = {
                 "enabled": enabled,
                 "name": name,
@@ -128,38 +145,33 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 "exclude_columns": exclude_list
             }
 
-            # Upload the JSON to Azure Blob Storage
-            conf_stg = StorageHandler(container_name="asiakasrajapinnat")
+            # 2.c) Upload (overwrite if it already exists)
             conf_stg.upload_blob(
                 blob_name=f"CustomerConfig/{name}.json",
                 data=json.dumps(result, ensure_ascii=False).encode("utf-8"),
                 overwrite=True
             )
 
-            # Create source directory
+            # 2.d) (Rest of your logic to create directories, etc.)
             src_stg = StorageHandler(container_name="vitecpowerbi")
-
             prefix = f"Rajapinta/{src_container}"
-            history_dir = prefix + 'history/'
-
-            marker = history_dir + '.keep'
-
+            history_dir = prefix + "history/"
+            marker = history_dir + ".keep"
             try:
-                src_stg.upload_blob(marker, b'', overwrite=True)
+                src_stg.upload_blob(marker, b"", overwrite=True)
                 src_stg.container_client.delete_blob(marker)
             except Exception as e:
-                # if something goes wrong it’s non‐fatal—just log it
                 logging.error(f"Could not create directory marker {marker}: {e}")
 
-            # Create destination container
             StorageHandler(container_name=dest_container)
-            
-            # 4) Return it as application/json
+
+            # 2.e) Return the newly saved JSON
             return func.HttpResponse(
                 json.dumps(result, ensure_ascii=False),
                 status_code=200,
                 mimetype="application/json"
             )
+
         except Exception as e:
             logging.error(f"Error processing POST request: {e}")
             return func.HttpResponse(
@@ -167,7 +179,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=500,
                 mimetype="application/json"
             )
-    # 3) Any other HTTP verb → 405
+
+    # ──────────────────
+    # 3) Other verbs → 405
+    # ──────────────────
     else:
         return func.HttpResponse(
             "Method Not Allowed",
