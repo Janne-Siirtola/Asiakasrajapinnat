@@ -4,370 +4,380 @@
   <meta charset="UTF-8" />
   <title>{% if customer %}Edit Customer: {{ customer.name | upper }}{% else %}Select Customer to Edit{% endif %}</title>
   <style>
-    /* Basic page layout */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 700px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      padding: 20px 30px;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333333;
-    }
-    ul.customer-list {
-      list-style: none;
-      padding: 0;
-    }
-    ul.customer-list li {
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      background-color: #f7f7f7;
-      border: 1px solid #dddddd;
-      border-radius: 4px;
-    }
-    ul.customer-list li span.name {
-      font-weight: 600;
-      color: #444444;
-    }
-    ul.customer-list li a.edit-btn {
-      text-decoration: none;
-      background-color: #0078D4;
-      color: #ffffff;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 13px;
-    }
-    ul.customer-list li a.edit-btn:hover {
-      background-color: #005A9E;
+    /* ======== Reset & apuluokat ======== */
+    *,
+    *::before,
+    *::after {
+    box-sizing: border-box;
     }
 
-    /* Form groups */
+    [hidden] {
+    display: none !important;    /* lomake/lista piiloon yhdellä attribuutilla */
+    }
+
+    /* ======== Peruslayout ======== */
+    body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 20px;
+    }
+
+    .container {
+    max-width: 700px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 20px 30px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+    text-align: center;
+    margin: 0 0 20px;
+    color: #333333;
+    }
+
+    /* ======== Asiakaslista ======== */
+    ul.customer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    }
+
+    ul.customer-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background-color: #f7f7f7;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    }
+
+    ul.customer-list li span.name {
+    font-weight: 600;
+    color: #444444;
+    overflow-wrap: anywhere;   /* pitkät nimet rikki ilman hor. scrollia */
+    }
+
+    ul.customer-list .edit-btn {
+    border: none;
+    cursor: pointer;
+    outline: none;
+    background-color: #0078d4;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background-color .15s ease-in-out;
+    }
+    ul.customer-list .edit-btn:hover,
+    ul.customer-list .edit-btn:focus {
+    background-color: #005a9e;
+    }
+
+    /* ======== Lomakkeen kentät ======== */
     .form-group {
-      margin-bottom: 15px;
+    margin-bottom: 15px;
     }
     .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-      color: #555555;
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555555;
     }
     .form-group input,
     .form-group select {
-      width: 100%;
-      padding: 8px 10px;
-      box-sizing: border-box;
-      border: 1px solid #cccccc;
-      border-radius: 4px;
-      font-size: 14px;
-      background-color: #ffffff;
-      color: #333333;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #333333;
     }
-    .form-group select:focus,
-    .form-group input:focus {
-      border-color: #0078D4;
-      outline: none;
+    .form-group input:focus,
+    .form-group select:focus {
+    border-color: #0078d4;
+    outline: none;
+    }
+    small {
+    color: #666666;
+    font-size: 12px;
     }
 
-    /* Fieldset styling */
+    /* ======== Fieldset + lisäsarakkeet ======== */
     fieldset {
-      border: 1px solid #cccccc;
-      padding: 15px 20px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-      background-color: #fafafa;
+    border: 1px solid #cccccc;
+    padding: 15px 20px 20px;
+    margin: 0 0 20px;
+    border-radius: 4px;
+    background-color: #fafafa;
     }
     legend {
-      padding: 0 8px;
-      font-weight: 600;
-      color: #333333;
+    padding: 0 8px;
+    font-weight: 600;
+    color: #333333;
     }
 
-    /* Extra-columns block styling */
     .extra-columns-group {
-      margin-bottom: 12px;
-      padding: 12px;
-      border: 1px solid #dddddd;
-      border-radius: 4px;
-      background-color: #f7f7f7;
-      position: relative;
+    position: relative;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    background-color: #f7f7f7;
     }
     .extra-columns-group .form-group {
-      margin-bottom: 8px;
+    margin-bottom: 8px;
     }
-    .extra-columns-group label {
-      font-weight: 500;
-      color: #444444;
+    .removeColumnBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #e81123;
+    color: #ffffff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
     }
-    .extra-columns-group .removeColumnBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: #E81123;
-      color: #ffffff;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .extra-columns-group .removeColumnBtn:hover {
-      background-color: #C50F1F;
+    .removeColumnBtn:hover {
+    background-color: #c50f1f;
     }
 
-    /* Buttons */
+    /* Lisää lisäsarake -painike */
     #addExtraColumnBtn {
-      background-color: #0078D4;
-      color: #ffffff;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 10px;
+    background-color: #0078d4;
+    color: #ffffff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
     }
     #addExtraColumnBtn:hover {
-      background-color: #005A9E;
+    background-color: #005a9e;
     }
+
+    /* ======== Tallenna / Peruuta -napit ======== */
     .submit-btn {
-      display: block;
-      width: 100%;
-      margin-top: 20px;
-      font-size: 16px;
-      padding: 10px 0;
-      border-radius: 4px;
-      background-color: #0078D4;
-      color: white;
-      border: none;
-      cursor: pointer;
+    display: block;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    background-color: #0078d4;
+    cursor: pointer;
+    transition: background-color .15s ease-in-out;
     }
-    .submit-btn:hover {
-      background-color: #005A9E;
+    .submit-btn:hover,
+    .submit-btn:focus {
+    background-color: #005a9e;
     }
+
+    /* Peruuta eriväriseksi */
+    #cancelBtn {
+    background-color: #666666;
+    margin-top: 10px;
+    }
+    #cancelBtn:hover,
+    #cancelBtn:focus {
+    background-color: #4d4d4d;
+    }
+
+    /* ======== Pieni fade kun näkymä vaihtuu (valinnainen) ======== */
+    @media (prefers-reduced-motion: no-preference) {
+    [hidden] {
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity .2s ease-out, transform .2s ease-out;
+    }
+    :not([hidden]) {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
-    {% if not customer %}
-      <h1>Select a Customer to Edit</h1>
 
-      {% if customers %}
-        <ul class="customer-list">
-          {% for cust in customers %}
-            <li>
-              <span class="name">{{ cust.name }}</span>
-              <a class="edit-btn" href="?name={{ cust.name }}">Edit</a>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>No customers found.</p>
-      {% endif %}
+    <!-- ===========================
+         2. 📝 Asiakaslista
+         ===========================-->
+    <h1 id="listTitle">Valitse asiakas</h1>
+    <ul id="customerList" class="customer-list">
+      {% for cust in customers %}
+        <li>
+          <span class="name">{{ cust.name }}</span>
+          <!--  🔄 Linkin sijasta painike, data‑attribuutissa nimi -->
+          <button class="edit-btn" data-name="{{ cust.name }}">Muokkaa</button>
+        </li>
+      {% endfor %}
+    </ul>
 
-    {% else %}
-      <h1>Edit Customer: {{ customer.name | upper }}</h1>
+    <!-- ===========================
+         3. ✏️ Muokkauslomake (piilossa)
+         ===========================-->
+    <form id="editForm" method="post" action="" hidden>
+      <h1 id="formTitle"></h1>   <!-- täytetään JS:ssä -->
 
-  <form id="editForm" method="post" action="">
-    <!-- Customer Name (readonly) -->
-    <div class="form-group">
-      <label for="name">Customer Name</label>
-      <input
-        type="text"
-        id="name"
-        name="name"
-        value="{{ customer.name }}"
-        readonly
-      />
-    </div>
+      <!-- Kentät – samat kuin alkuperäisessä lomakkeessa -->
+      <div class="form-group">
+        <label for="name">Asiakkaan nimi</label>
+        <input type="text" id="name" name="name" readonly />
+      </div>
 
-    <!-- Concern Number(s) -->
-    <div class="form-group">
-      <label for="konserni">Concern Number(s)</label>
-      <input
-        type="text"
-        id="konserni"
-        name="konserni"
-        value="{{ customer.konserni | join(',') }}"
-        required
-      />
-      <small style="color: #666666; font-size: 12px;">
-        Separate multiple numbers with commas
-      </small>
-    </div>
+      <div class="form-group">
+        <label for="konserni">Konserninumerot</label>
+        <input type="text" id="konserni" name="konserni" required />
+        <small>Erottele pilkuilla</small>
+      </div>
 
-    <!-- Source Container -->
-    <div class="form-group">
-      <label for="src_container">Source Container</label>
-      <input
-        type="text"
-        id="src_container"
-        name="src_container"
-        value="{{ customer.source_container }}"
-        required
-      />
-    </div>
+      <div class="form-group">
+        <label for="src_container">Lähdekontti</label>
+        <input type="text" id="src_container" name="src_container" required />
+      </div>
 
-    <!-- Destination Container -->
-    <div class="form-group">
-      <label for="dest_container">Destination Container</label>
-      <input
-        type="text"
-        id="dest_container"
-        name="dest_container"
-        value="{{ customer.destination_container }}"
-        required
-      />
-    </div>
+      <div class="form-group">
+        <label for="dest_container">Kohdekontti</label>
+        <input type="text" id="dest_container" name="dest_container" required />
+      </div>
 
-    <!-- File Format -->
-    <div class="form-group">
-      <label for="file_format">File Format</label>
-      <select id="file_format" name="file_format" required>
-        <option value="json" {% if customer.file_format == 'json' %}selected{% endif %}>JSON</option>
-        <option value="csv" {% if customer.file_format == 'csv' %}selected{% endif %}>CSV</option>
-      </select>
-    </div>
+      <div class="form-group">
+        <label for="file_format">Tiedostoformaatti</label>
+        <select id="file_format" name="file_format" required>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </div>
 
-        <!-- 6) Extra Columns -->
-        <fieldset>
-          <legend>Extra Columns (optional)</legend>
+      <!-- ⭐️ Extra‑columns‑kentille luodaan oma div; täytetään JS:llä -->
+      <fieldset>
+        <legend>Lisäsarakkeet</legend>
+        <div id="extraColumnsContainer"></div>
+        <button type="button" id="addExtraColumnBtn">+ Lisää sarake</button>
+      </fieldset>
 
-          <div id="extraColumnsContainer">
-            {% for key, info in customer.extra_columns.items() %}
-              <div class="extra-columns-group">
-                <button type="button" class="removeColumnBtn">Remove</button>
-                <div class="form-group">
-                  <label>Column Key</label>
-                  <input
-                    type="text"
-                    name="extra_key"
-                    value="{{ key }}"
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Display Name</label>
-                  <input
-                    type="text"
-                    name="extra_name"
-                    value="{{ info.name }}"
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Data Type</label>
-                  <input
-                    type="text"
-                    name="extra_dtype"
-                    value="{{ info.dtype }}"
-                  />
-                </div>
-              </div>
-            {% endfor %}
-          </div>
+      <div class="form-group">
+        <label for="exclude_columns">Pois perus­sarakkeista</label>
+        <input type="text" id="exclude_columns" name="exclude_columns" />
+      </div>
 
-          <!-- Template block (hidden) for adding new extra columns -->
-          <div
-            id="extraColumnTemplate"
-            class="extra-columns-group"
-            style="display: none;"
-          >
-            <button type="button" class="removeColumnBtn">Remove</button>
-            <div class="form-group">
-              <label>Column Key</label>
-              <input
-                type="text"
-                name="extra_key"
-                placeholder="e.g. PRTName"
-              />
-            </div>
-            <div class="form-group">
-              <label>Display Name</label>
-              <input
-                type="text"
-                name="extra_name"
-                placeholder="e.g. Asiakasryhma"
-              />
-            </div>
-            <div class="form-group">
-              <label>Data Type</label>
-              <input
-                type="text"
-                name="extra_dtype"
-                placeholder="e.g. string"
-              />
-            </div>
-          </div>
-
-          <button type="button" id="addExtraColumnBtn">+ Add Extra Column</button>
-        </fieldset>
-
-        <!-- 7) Exclude Columns -->
-        <div class="form-group">
-          <label for="exclude_columns">Exclude From Base Columns (optional)</label>
-          <input
-            type="text"
-            id="exclude_columns"
-            name="exclude_columns"
-            value="{{ customer.exclude_columns | join(',') }}"
-          />
-          <small style="color: #666666; font-size: 12px;">
-            Separate multiple column keys with commas
-          </small>
-        </div>
-
-        <!-- 8) Submit Button -->
-        <button type="submit" class="submit-btn">Save Changes</button>
-      </form>
-    {% endif %}
+      <button type="submit" class="submit-btn">Tallenna</button>
+      <button type="button" id="cancelBtn" class="submit-btn" style="margin-top:8px;background:#777;">
+        Peruuta
+      </button>
+    </form>
   </div>
 
+  <!-- ===========================
+       4. 🔗 Asiakasdata JSON‑muodossa
+       ===========================-->
+  <script id="customersData" type="application/json">
+    {{ customers | tojson }}
+  </script>
+
+  <!-- ===========================
+       5. 💻 JavaScript
+       ===========================-->
   <script>
-    (function() {
-      const form = document.getElementById("editForm");
-      const container = document.getElementById("extraColumnsContainer");
-      const template = document.getElementById("extraColumnTemplate");
-      const addBtn = document.getElementById("addExtraColumnBtn");
+  (function () {
+    const customers = JSON.parse(
+      document.getElementById("customersData").textContent
+    );
 
-      // If no “edit” form is on screen, do nothing
-      if (!form) return;
+    /* ---------- Elementtireferenssit ---------- */
+    const listTitle   = document.getElementById("listTitle");
+    const customerUl  = document.getElementById("customerList");
+    const form        = document.getElementById("editForm");
+    const formTitle   = document.getElementById("formTitle");
+    const cancelBtn   = document.getElementById("cancelBtn");
 
-      // Wire up “Remove” buttons on any pre-existing extra-column groups
-      container.querySelectorAll(".extra-columns-group").forEach(group => {
-        const removeBtn = group.querySelector(".removeColumnBtn");
-        removeBtn.addEventListener("click", () => {
-          container.removeChild(group);
-        });
-      });
+    /* ---------- Lomakkeen kentät ---------- */
+    const $ = id => form.querySelector("#" + id);
+    const fields = {
+      name: $("name"),
+      konserni: $("konserni"),
+      src_container: $("src_container"),
+      dest_container: $("dest_container"),
+      file_format: $("file_format"),
+      exclude_columns: $("exclude_columns"),
+      extraContainer: document.getElementById("extraColumnsContainer")
+    };
 
-      function addExtraColumn() {
-        // Clone the template (deep clone), make it visible, attach a remove handler
-        const clone = template.cloneNode(true);
-        clone.style.display = "";
-        clone.removeAttribute("id");
+    /* ---------- Sarake‑template ---------- */
+    function makeExtraRow(key = "", info = {name:"",dtype:""}) {
+      const div = document.createElement("div");
+      div.className = "extra-columns-group";
+      div.innerHTML = `
+        <button type="button" class="removeColumnBtn">Poista</button>
+        <div class="form-group"><label>Avaimen nimi</label>
+          <input type="text" name="extra_key" value="${key}">
+        </div>
+        <div class="form-group"><label>Näyttönimi</label>
+          <input type="text" name="extra_name" value="${info.name}">
+        </div>
+        <div class="form-group"><label>Tietotyyppi</label>
+          <input type="text" name="extra_dtype" value="${info.dtype}">
+        </div>`;
+      div.querySelector(".removeColumnBtn").onclick = () => div.remove();
+      return div;
+    }
+    document
+      .getElementById("addExtraColumnBtn")
+      .addEventListener("click", () =>
+        fields.extraContainer.appendChild(makeExtraRow())
+      );
 
-        // Wire up the “Remove Column” button inside this cloned block
-        clone
-          .querySelector(".removeColumnBtn")
-          .addEventListener("click", function() {
-            container.removeChild(clone);
-          });
+    /* ---------- Näytä muokkauslomake ---------- */
+    customerUl.addEventListener("click", e => {
+      const btn = e.target.closest(".edit-btn");
+      if (!btn) return;
 
-        container.appendChild(clone);
+      const name = btn.dataset.name;
+      const cust = customers.find(c => c.name === name);
+      if (!cust) return console.error("Asiakasta ei löytynyt");
+
+      // Täytetään lomake
+      formTitle.textContent = `Muokkaa: ${cust.name.toUpperCase()}`;
+      fields.name.value            = cust.name;
+      fields.konserni.value        = cust.konserni.join(",");
+      fields.src_container.value   = (cust.source_container || "").replace("/", "");
+      fields.dest_container.value  = (cust.destination_container || "").replace("/", "");
+      fields.file_format.value     = cust.file_format;
+      fields.exclude_columns.value = (cust.exclude_columns || []).join(",");
+
+      // Tyhjennä & täytä lisäsarakkeet
+      fields.extraContainer.innerHTML = "";
+      if (cust.extra_columns) {
+        for (const [k, info] of Object.entries(cust.extra_columns)) {
+          fields.extraContainer.appendChild(makeExtraRow(k, info));
+        }
       }
 
-      addBtn.addEventListener("click", addExtraColumn);
-    })();
+      // Vaihda näkymä
+      customerUl.hidden = true;
+      listTitle.hidden  = true;
+      form.hidden       = false;
+      form.scrollIntoView({behavior:"smooth"});
+    });
+
+    /* ---------- Peruutus ---------- */
+    cancelBtn.onclick = () => {
+      form.hidden       = true;
+      customerUl.hidden = false;
+      listTitle.hidden  = false;
+    };
+  })();
   </script>
 </body>
 </html>
