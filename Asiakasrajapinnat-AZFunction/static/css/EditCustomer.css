@@ -1,0 +1,183 @@
+/* ======== Reset & helpers ======== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {                  /* hide with one attribute */
+  display: none !important;
+}
+
+/* ======== Layout ======== */
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  padding: 20px 30px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  margin: 0 0 20px;
+  color: #333333;
+}
+
+/* ======== Customer list ======== */
+ul.customer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul.customer-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background-color: #f7f7f7;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+}
+
+ul.customer-list li span.name {
+  font-weight: 600;
+  color: #444444;
+  overflow-wrap: anywhere;   /* long names without horiz‑scroll */
+}
+
+ul.customer-list .edit-btn {
+  border: none;
+  cursor: pointer;
+  outline: none;
+  background-color: #0078d4;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: background-color .15s ease-in-out;
+}
+ul.customer-list .edit-btn:hover,
+ul.customer-list .edit-btn:focus {
+  background-color: #005a9e;
+}
+
+/* ======== Inputs (overrides / extras) ======== */
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #0078d4;
+  outline: none;
+}
+
+small {
+  color: #666666;
+  font-size: 12px;
+}
+
+/* ======== Fieldset + extra columns ======== */
+fieldset {
+  border: 1px solid #cccccc;
+  padding: 15px 20px 20px;
+  margin: 0 0 20px;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.extra-columns-group {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  background-color: #f7f7f7;
+}
+
+.removeColumnBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #e81123;
+  color: #ffffff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.removeColumnBtn:hover {
+  background-color: #c50f1f;
+}
+
+/* Add‑column button */
+#addExtraColumnBtn {
+  background-color: #0078d4;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+#addExtraColumnBtn:hover {
+  background-color: #005a9e;
+}
+
+/* ======== Save / Cancel buttons ======== */
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  background-color: #0078d4;
+  cursor: pointer;
+  transition: background-color .15s ease-in-out;
+}
+
+.submit-btn:hover,
+.submit-btn:focus {
+  background-color: #005a9e;
+}
+
+/* Cancel styled differently */
+#cancelBtn {
+  background-color: #666666;
+  margin-top: 10px;
+}
+
+#cancelBtn:hover,
+#cancelBtn:focus {
+  background-color: #4d4d4d;
+}
+
+/* ======== Small fade‑in effect ======== */
+@media (prefers-reduced-motion: no-preference) {
+  [hidden] {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity .2s ease-out, transform .2s ease-out;
+  }
+  :not([hidden]) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

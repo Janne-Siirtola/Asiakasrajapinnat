@@ -2,208 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>{% if customer %}Edit Customer: {{ customer.name | upper }}{% else %}Select Customer to Edit{% endif %}</title>
+  <title>Asiakasrajapinnat - Edit Customer</title>
   <style>
-    /* ======== Reset & apuluokat ======== */
-    *,
-    *::before,
-    *::after {
-    box-sizing: border-box;
-    }
 
-    [hidden] {
-    display: none !important;    /* lomake/lista piiloon yhdellä attribuutilla */
-    }
-
-    /* ======== Peruslayout ======== */
-    body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    margin: 0;
-    padding: 20px;
-    }
-
-    .container {
-    max-width: 700px;
-    margin: 0 auto;
-    background-color: #ffffff;
-    padding: 20px 30px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-    text-align: center;
-    margin: 0 0 20px;
-    color: #333333;
-    }
-
-    /* ======== Asiakaslista ======== */
-    ul.customer-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    }
-
-    ul.customer-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    background-color: #f7f7f7;
-    border: 1px solid #dddddd;
-    border-radius: 4px;
-    }
-
-    ul.customer-list li span.name {
-    font-weight: 600;
-    color: #444444;
-    overflow-wrap: anywhere;   /* pitkät nimet rikki ilman hor. scrollia */
-    }
-
-    ul.customer-list .edit-btn {
-    border: none;
-    cursor: pointer;
-    outline: none;
-    background-color: #0078d4;
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    transition: background-color .15s ease-in-out;
-    }
-    ul.customer-list .edit-btn:hover,
-    ul.customer-list .edit-btn:focus {
-    background-color: #005a9e;
-    }
-
-    /* ======== Lomakkeen kentät ======== */
-    .form-group {
-    margin-bottom: 15px;
-    }
-    .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #555555;
-    }
-    .form-group input,
-    .form-group select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #ffffff;
-    color: #333333;
-    }
-    .form-group input:focus,
-    .form-group select:focus {
-    border-color: #0078d4;
-    outline: none;
-    }
-    small {
-    color: #666666;
-    font-size: 12px;
-    }
-
-    /* ======== Fieldset + lisäsarakkeet ======== */
-    fieldset {
-    border: 1px solid #cccccc;
-    padding: 15px 20px 20px;
-    margin: 0 0 20px;
-    border-radius: 4px;
-    background-color: #fafafa;
-    }
-    legend {
-    padding: 0 8px;
-    font-weight: 600;
-    color: #333333;
-    }
-
-    .extra-columns-group {
-    position: relative;
-    margin-bottom: 12px;
-    padding: 12px;
-    border: 1px solid #dddddd;
-    border-radius: 4px;
-    background-color: #f7f7f7;
-    }
-    .extra-columns-group .form-group {
-    margin-bottom: 8px;
-    }
-    .removeColumnBtn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: #e81123;
-    color: #ffffff;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 13px;
-    cursor: pointer;
-    }
-    .removeColumnBtn:hover {
-    background-color: #c50f1f;
-    }
-
-    /* Lisää lisäsarake -painike */
-    #addExtraColumnBtn {
-    background-color: #0078d4;
-    color: #ffffff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-top: 10px;
-    }
-    #addExtraColumnBtn:hover {
-    background-color: #005a9e;
-    }
-
-    /* ======== Tallenna / Peruuta -napit ======== */
-    .submit-btn {
-    display: block;
-    width: 100%;
-    padding: 10px 0;
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    color: #ffffff;
-    background-color: #0078d4;
-    cursor: pointer;
-    transition: background-color .15s ease-in-out;
-    }
-    .submit-btn:hover,
-    .submit-btn:focus {
-    background-color: #005a9e;
-    }
-
-    /* Peruuta eriväriseksi */
-    #cancelBtn {
-    background-color: #666666;
-    margin-top: 10px;
-    }
-    #cancelBtn:hover,
-    #cancelBtn:focus {
-    background-color: #4d4d4d;
-    }
-
-    /* ======== Pieni fade kun näkymä vaihtuu (valinnainen) ======== */
-    @media (prefers-reduced-motion: no-preference) {
-    [hidden] {
-        opacity: 0;
-        transform: translateY(-4px);
-        transition: opacity .2s ease-out, transform .2s ease-out;
-    }
-    :not([hidden]) {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    }
 
   </style>
 </head>
@@ -327,9 +128,15 @@
           <input type="text" name="extra_name" value="${info.name}">
         </div>
         <div class="form-group"><label>Tietotyyppi</label>
-          <input type="text" name="extra_dtype" value="${info.dtype}">
+          <select name="extra_dtype" id="extra_dtype">
+            <option value="string">String</option>
+            <option value="float">Float</option>
+          </select>
         </div>`;
       div.querySelector(".removeColumnBtn").onclick = () => div.remove();
+      // Asetetaan valittu dtype
+      const dtypeSelect = div.querySelector("select[name='extra_dtype']");
+      dtypeSelect.value = info.dtype || "string"; // Oletus "string"
       return div;
     }
     document

@@ -24,9 +24,8 @@ class Customer:
         enabled: bool,
         base_columns: Dict[str, Dict[str, str]],
         exclude_columns: Optional[list[str]] = None,
-        log_func: Optional[callable] = None
     ) -> None:
-        
+
         self.name = name
         self.konserni = konserni
         self.source_container = source_container
@@ -34,23 +33,21 @@ class Customer:
         self.file_format = file_format
         self.extra_columns = extra_columns
         self.enabled = enabled
-        
+
         self.base_columns = base_columns
         self.exclude_columns = exclude_columns if exclude_columns else []
-        
+
+  
         for c in self.exclude_columns:
             self.base_columns.pop(c)
-        
-        self.log = log_func
-        
+
         self.rename_map: Dict[str, str] = {}
         self.dtype_map: Dict[str, str] = {}
         self.decimals_map: Dict[str, int] = {}
         self.combined_columns: Dict[str, Dict[str, Union[str, int]]] = {}
-        
+
         self.generate_combined_columns()
         self.generate_data_maps()
-        
 
     def get_data(self, stg: StorageHandler, stg_prefix: Optional[str] = None) -> pd.DataFrame:
         # 0) normalize and build our two “directories”
@@ -73,13 +70,14 @@ class Customer:
 
         # 3) download it
         data = stg.download_blob(latest.name)
-        self.log(
+        logging.info(
             f"Loaded {len(data)} bytes from {stg.container_name}/{latest.name} "
             f"(last modified: {latest.last_modified})"
         )
 
         # 4) move it into history
-        stg.move_file_to_dir(latest.name, target_dir=history_dir, overwrite=True)
+        stg.move_file_to_dir(
+            latest.name, target_dir=history_dir, overwrite=True)
 
         # 5) parse and return
         df = pd.read_csv(io.BytesIO(data),
@@ -87,7 +85,6 @@ class Customer:
                          delimiter=';')
         return df
 
-    
     def generate_combined_columns(self) -> None:
         """
         Generate a dictionary of allowed columns based on the customer's base_columns and extra_columns.
@@ -107,7 +104,6 @@ class Customer:
                 print(
                     f"Duplicate key '{key}' found in extra_columns, skipping.")
 
-    
     def generate_data_maps(self) -> None:
         # 1) rename mapping: old_key → new_name
         self.rename_map = {old: cfg["name"]
@@ -123,8 +119,3 @@ class Customer:
                              if "decimals" in cfg}
 
         self.allowed_columns = self.rename_map.copy()
-
-
-
-
-

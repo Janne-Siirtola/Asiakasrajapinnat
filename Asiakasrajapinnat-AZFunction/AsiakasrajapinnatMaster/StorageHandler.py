@@ -5,24 +5,53 @@ import logging
 
 
 class StorageHandler:
-    def __init__(self, container_name: str, log_func=None) -> None:
+    def __init__(self, container_name: str, verify_existence: bool = False) -> None:
+        """Initialize the StorageHandler with the specified container name.
+
+        Args:
+            container_name (str): Name of the Azure Blob Storage container.
+            verify_existence (bool, optional): If True, checks if the container exists. Defaults to False.
+
+        Raises:
+            ValueError: If the container does not exist and verify_existence is True.
+        """
         connection_str = os.environ["AzureWebJobsStorage"]
         self.container_name = container_name
-        self.blob_service = BlobServiceClient.from_connection_string(connection_str)
-        self.container_client: ContainerClient = self.blob_service.get_container_client(container_name)
-        self.log = log_func
-        
-        if self.log is None:
-            self.log = logging.info
+        self.blob_service = BlobServiceClient.from_connection_string(
+            connection_str)
+        self.container_client: ContainerClient = self.blob_service.get_container_client(
+            container_name)
 
-        # make sure the container exists; if not, create it
+        # Check if the container exists; if not, raise an error
+        if verify_existence and not self.container_exists():
+            raise ValueError(
+                f"Container '{container_name}' does not exist in Azure Blob Storage.")
+
+    def container_exists(self) -> bool:
+        """
+        Check if the container exists.
+        :return: True if the container exists, False otherwise.
+        """
+        return self.container_client.exists()
+
+    def create_container(self) -> None:
+        """
+        Create the container if it does not already exist.
+        """
         if not self.container_client.exists():
             self.container_client.create_container()
-            if self.log:
-                self.log(f"Created container '{container_name}'")
+            logging.info(f"Container '{self.container_name}' created.")
         else:
-            if self.log:
-                self.log(f"Using existing container '{container_name}'")
+            logging.info(f"Container '{self.container_name}' already exists.")
+
+    def list_blobs(self, prefix: Optional[str] = None) -> List[str]:
+        """
+        List all blobs in the container, optionally filtered by a prefix.
+        :param prefix: Optional prefix to filter blobs.
+        :return: List of blob names.
+        """
+        blobs = self.container_client.list_blobs(name_starts_with=prefix)
+        return [b.name for b in blobs]
 
     def list_csv_blobs(self, prefix: Optional[str] = None) -> List[str]:
         blobs = self.container_client.list_blobs(name_starts_with=prefix)
@@ -73,6 +102,7 @@ class StorageHandler:
 
         # 3) delete the original
         self.container_client.delete_blob(source_blob_name)
-        self.log(f"Moved blob from {self.container_name}/{source_blob_name} to {self.container_name}/{dest_blob_name}")
+        logging.info(
+            f"Moved blob from {self.container_name}/{source_blob_name} to {self.container_name}/{dest_blob_name}")
 
         return dest_blob_name

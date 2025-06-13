@@ -2,144 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Create Customer Form</title>
-  <!-- Link to the external CSS file under /static/css/style.css -->
-  <!-- <link rel="stylesheet" href="/api/Get_static_file?path=css/styles.css" /> -->
-  <style>
-    /* Basic page layout */
-    body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    margin: 0;
-    padding: 20px;
-    }
-    .container {
-    max-width: 600px;
-    margin: 0 auto;
-    background-color: #ffffff;
-    padding: 20px 30px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #333333;
-    }
-
-    /* Form groups */
-    .form-group {
-    margin-bottom: 15px;
-    }
-    .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #555555;
-    }
-    .form-group input {
-    width: 100%;
-    padding: 8px 10px;
-    box-sizing: border-box;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    font-size: 14px;
-    }
-
-    /* Fieldset styling */
-    fieldset {
-    border: 1px solid #cccccc;
-    padding: 15px 20px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    background-color: #fafafa;
-    }
-    legend {
-    padding: 0 8px;
-    font-weight: 600;
-    color: #333333;
-    }
-
-    /* Extra-columns block styling */
-    .extra-columns-group {
-    margin-bottom: 12px;
-    padding: 12px;
-    border: 1px solid #dddddd;
-    border-radius: 4px;
-    background-color: #f7f7f7;
-    }
-    .extra-columns-group .form-group {
-    margin-bottom: 8px;
-    }
-    .extra-columns-group label {
-    font-weight: 500;
-    color: #444444;
-    }
-
-    /* Buttons */
-    button,
-    .removeColumnBtn {
-    background-color: #0078D4;
-    color: #ffffff;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    }
-    button:hover,
-    .removeColumnBtn:hover {
-    background-color: #005A9E;
-    }
-    .removeColumnBtn {
-    background-color: #E81123;
-    margin-top: 5px;
-    font-size: 13px;
-    padding: 6px 10px;
-    }
-    .removeColumnBtn:hover {
-    background-color: #C50F1F;
-    }
-    #addExtraColumnBtn {
-    margin-top: 10px;
-    font-size: 14px;
-    padding: 8px 12px;
-    }
-    .submit-btn {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    font-size: 16px;
-    padding: 10px 0;
-    border-radius: 4px;
-    background-color: #0078D4;
-    color: white;
-    border: none;
-    cursor: pointer;
-    }
-    .submit-btn:hover {
-    background-color: #005A9E;
-    }
-
-    /* Style the dropdown (select) to match input fields */
-    .form-group select {
-    width: 100%;
-    padding: 8px 10px;
-    box-sizing: border-box;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #ffffff;
-    color: #333333;
-    }
-
-    .form-group select:focus {
-    border-color: #0078D4;
-    outline: none;
-    }
-  </style>
+  <title>Asiakasrajapinnat - Create Customer</title>
+  {% if css_blocks %}
+    <style>
+      {%- for block in css_blocks %}
+        {{ block | safe }}
+      {%- endfor %}
+    </style>
+  {% endif %}
 </head>
 <body>
+  {# only render the container if there are any messages #}
+  {% if messages %}
+    <div id="flash-container">
+      {% for msg in messages %}
+        <div class="flash {{ msg.category }}">
+          {{ msg.message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
   <div class="container">
     <h1>Create Customer Form</h1>
 
@@ -201,12 +83,12 @@
         <select id="file_format" name="file_format" required>
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
-        </select>
+          </select>
         </div>
-
-      <!-- Extra Columns -->
-      <fieldset>
-        <legend>Extra Columns (optional)</legend>
+        
+        <!-- Extra Columns -->
+        <fieldset>
+          <legend>Extra Columns (optional)</legend>
         <!-- This wrapper will contain zero or more “.extra-columns-group” blocks -->
         <div id="extraColumnsContainer"></div>
 
@@ -215,30 +97,29 @@
           id="extraColumnTemplate"
           class="extra-columns-group"
           style="display: none;"
-        >
+          >
           <div class="form-group">
             <label>Column Key</label>
             <input
-              type="text"
-              name="extra_key"
-              placeholder="e.g. PRTName"
+            type="text"
+            name="extra_key"
+            placeholder="e.g. PRTName"
             />
           </div>
           <div class="form-group">
             <label>Display Name</label>
             <input
-              type="text"
-              name="extra_name"
-              placeholder="e.g. Asiakasryhma"
+            type="text"
+            name="extra_name"
+            placeholder="e.g. Asiakasryhma"
             />
           </div>
           <div class="form-group">
             <label>Data Type</label>
-            <input
-              type="text"
-              name="extra_dtype"
-              placeholder="e.g. string"
-            />
+            <select name="extra_dtype" id="extra_dtype">
+              <option value="string">String</option>
+              <option value="float">Float</option>
+            </select>
           </div>
           <button type="button" class="removeColumnBtn">Remove Column</button>
         </div>
@@ -258,6 +139,17 @@
         <small style="color: #666666; font-size: 12px;">
           Separate multiple column keys with commas
         </small>
+      </div>
+
+      <div class="form-group">
+        <label for="create_containers_check">Do you want to create source and destination containers for this customer?</label>
+        <input
+          type="checkbox"
+          id="create_containers_check"
+          name="create_containers_check"
+          checked
+          value="true"
+        />
       </div>
 
       <!-- Submit Button -->

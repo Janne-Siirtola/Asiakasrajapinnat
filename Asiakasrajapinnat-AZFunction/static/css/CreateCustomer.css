@@ -1,12 +1,4 @@
-/* static/css/style.css */
-
-/* Basic page layout */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  margin: 0;
-  padding: 20px;
-}
+/* ======== Layout ======== */
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -15,22 +7,14 @@ body {
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 h1 {
   text-align: center;
   margin-bottom: 20px;
   color: #333333;
 }
 
-/* Form groups */
-.form-group {
-  margin-bottom: 15px;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: #555555;
-}
+/* ======== Inputs ======== */
 .form-group input {
   width: 100%;
   padding: 8px 10px;
@@ -40,7 +24,6 @@ h1 {
   font-size: 14px;
 }
 
-/* Fieldset styling */
 fieldset {
   border: 1px solid #cccccc;
   padding: 15px 20px;
@@ -48,13 +31,8 @@ fieldset {
   border-radius: 4px;
   background-color: #fafafa;
 }
-legend {
-  padding: 0 8px;
-  font-weight: 600;
-  color: #333333;
-}
 
-/* Extra-columns block styling */
+/* Extra‑column wrapper */
 .extra-columns-group {
   margin-bottom: 12px;
   padding: 12px;
@@ -62,18 +40,16 @@ legend {
   border-radius: 4px;
   background-color: #f7f7f7;
 }
-.extra-columns-group .form-group {
-  margin-bottom: 8px;
-}
+
 .extra-columns-group label {
   font-weight: 500;
   color: #444444;
 }
 
-/* Buttons */
+/* ======== Buttons ======== */
 button,
 .removeColumnBtn {
-  background-color: #0078D4;
+  background-color: #0078d4;
   color: #ffffff;
   border: none;
   padding: 8px 14px;
@@ -81,24 +57,30 @@ button,
   cursor: pointer;
   font-size: 14px;
 }
+
 button:hover,
 .removeColumnBtn:hover {
-  background-color: #005A9E;
+  background-color: #005a9e;
 }
+
 .removeColumnBtn {
-  background-color: #E81123;
+  background-color: #e81123;
   margin-top: 5px;
   font-size: 13px;
   padding: 6px 10px;
 }
+
 .removeColumnBtn:hover {
-  background-color: #C50F1F;
+  background-color: #c50f1f;
 }
+
 #addExtraColumnBtn {
   margin-top: 10px;
   font-size: 14px;
   padding: 8px 12px;
 }
+
+/* Submit */
 .submit-btn {
   display: block;
   width: 100%;
@@ -106,11 +88,29 @@ button:hover,
   font-size: 16px;
   padding: 10px 0;
   border-radius: 4px;
-  background-color: #0078D4;
-  color: white;
+  background-color: #0078d4;
+  color: #ffffff;
   border: none;
   cursor: pointer;
 }
+
 .submit-btn:hover {
-  background-color: #005A9E;
+  background-color: #005a9e;
+}
+
+/* ======== Select ======== */
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.form-group select:focus {
+  border-color: #0078d4;
+  outline: none;
 }

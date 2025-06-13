@@ -26,18 +26,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     # 1) Handle GET requests
     # ────────────────
     if req.method == "GET":
-        # 1.a) If a specific customer “name” is given (for editing), load that JSON:
-        name_to_edit = req.params.get("name")
-        single_customer = None
-        if name_to_edit:
-            blob_path = f"CustomerConfig/{name_to_edit}.json"
-            try:
-                raw_json = conf_stg.download_blob(blob_path)
-                single_customer = json.loads(raw_json)
-            except Exception as e:
-                logging.warning(f"Could not load customer '{name_to_edit}': {e}")
-                single_customer = None  # leave it None if not found
-
         # 1.b) Regardless, load _all_ customer JSONs into a list
         customers = []
         try:
@@ -58,8 +46,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         template = jinja_env.get_template("index.html")
         rendered = template.render(
             customers=customers,
-            customer=single_customer,
-            function_key=os.getenv("function_key")
         )
         return func.HttpResponse(
             rendered,

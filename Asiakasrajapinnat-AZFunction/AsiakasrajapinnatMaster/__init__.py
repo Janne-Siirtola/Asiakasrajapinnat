@@ -15,13 +15,6 @@ import azure.functions as func
 
 # version 1.24
 
-log_messages = []
-
-
-def log(msg: str):
-    """Append a log string to our in-memory list of messages."""
-    log_messages.append(msg)
-
 
 def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
     """
@@ -33,26 +26,12 @@ def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
     return finland_time.strftime(strftime)
 
 
-def load_main_config(storage: StorageHandler) -> MainConfig:
-    """
-    Load the JSON configuration from the given path and return a MainConfig object.
-
-    :param config_path: either the file path to config.json or a directory containing config.json.
-    :return: a MainConfig instance
-    """
-    json_data = storage.download_blob("MainConfig.json")
-    raw = json.loads(json_data)
-    # raw["customer_config_path"] = Path(raw["customer_config_path"])
-    return MainConfig(**raw)
-
-
 def load_customers_from_config(maincfg: MainConfig, storage: StorageHandler) -> List[Customer]:
     customers: List[Customer] = []
     for cfg_file in storage.list_json_blobs(prefix=maincfg.customer_config_path):
         json_data = storage.download_blob(cfg_file)
         data = json.loads(json_data)
-        customer = Customer(**data, base_columns=maincfg.base_columns, log_func=log)
-        # customer.set_base_columns(maincfg.base_columns)
+        customer = Customer(**data, base_columns=maincfg.base_columns)
         customers.append(customer)
     return customers
 
@@ -62,31 +41,35 @@ def main(mytimer: func.TimerRequest) -> None:
         logging.basicConfig(
             level=logging.INFO,
         )
-        log(f"Process started at {get_timestamp()}.")
+        logging.info(f"Process started at {get_timestamp()}.")
         start_time = time.perf_counter()
 
-        conf_stg = StorageHandler(container_name="asiakasrajapinnat", log_func=log)
-        src_stg = StorageHandler(container_name="vitecpowerbi", log_func=log)
-        
-        maincfg = load_main_config(conf_stg)
+        conf_stg = StorageHandler(
+            container_name="asiakasrajapinnat", verify_existence=True)
+        src_stg = StorageHandler(
+            container_name="vitecpowerbi", verify_existence=True)
+
+        maincfg = MainConfig(conf_stg)
+
         customers = load_customers_from_config(maincfg, conf_stg)
-        log(f"Loaded {len(customers)} customers from config.")
+        logging.info(f"Loaded {len(customers)} customers from config.")
+
         for customer in customers:
             if customer.enabled:
-                log(f"Processing customer {customer.name}...")
-                
-                dst_stg = StorageHandler(customer.destination_container, log_func=log)
+                logging.info(f"Processing customer {customer.name}...")
 
                 stg_prefix = maincfg.src_container_prefix + customer.source_container
                 if not stg_prefix:
-                    log(f"Source container for customer {customer.name} is empty.")
+                    logging.info(
+                        f"Source container for customer {customer.name} is empty.")
                     continue
-                
+
                 df = customer.get_data(src_stg, stg_prefix)
                 if df.empty:
-                    log(f"No data found for customer {customer.name}.")
+                    logging.info(
+                        f"No data found for customer {customer.name}.")
                     continue
-                
+
                 editor = DataEditor(df=df, customer=customer)
                 try:
                     df_final = (editor
@@ -98,34 +81,38 @@ def main(mytimer: func.TimerRequest) -> None:
                                 .validate_final_df()
                                 .df)
 
-                    json_data = JSONBuilder(customer).build_json(df_final)
-                    
                     ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
-                    blob_name = f"tapahtumat_{customer.name}_{ts}"
+                    if customer.file_format.lower() == "csv":
+                        data = df_final.to_csv(
+                            index=False, encoding='utf-8', sep=";", decimal=".")
+                        blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
+                    elif customer.file_format.lower() == "json":
+                        data = JSONBuilder(customer).build_json(df_final)
+                        blob_name = f"tapahtumat_{customer.name}_{ts}.json"
+                    else:
+                        raise ValueError(
+                            f"Invalid file format: {customer.file_format}")
 
-                    dst_stg.upload_blob(blob_name, json_data)
+                    dst_stg = StorageHandler(
+                        customer.destination_container, verify_existence=True)
+                    dst_stg.upload_blob(blob_name, data)
 
-                    """ df_final.to_csv(f"output.csv", index=False,
-                                    encoding='utf-8', sep=";", decimal=".") """
-                    log(
+                    logging.info(
                         f"Processed customer {customer.name} successfully.")
                 except ValueError as e:
                     logging.error(
                         f"Error processing customer {customer.name}: {e}")
                     continue
-                
+
         elapsed_time = time.perf_counter() - start_time
 
-        log(f"Process completed successfully at {get_timestamp()}.")
-        log(f"Elapsed time: {elapsed_time:.2f} seconds.")
-
-        logging.info("\n".join(log_messages))
+        logging.info(f"Process completed successfully at {get_timestamp()}.")
+        logging.info(f"Elapsed time: {elapsed_time:.2f} seconds.")
     except Exception as e:
         # ----------------------------------------
         # 5. FAILURE: OUTPUT LOG + STACK TRACE
         # ----------------------------------------
         logging.error("Unexpected error occurred: " + traceback.format_exc())
 
-        # Optionally re-raise if you want the Azure Function to register as 'failed'
+        # Re-raise the exception to ensure the function is marked as failed
         raise
-
