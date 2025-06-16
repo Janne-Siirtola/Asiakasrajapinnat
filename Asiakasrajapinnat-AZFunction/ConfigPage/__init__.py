@@ -45,23 +45,26 @@ def flash(category: str = "error", message: str = "") -> None:
 
 def render_template(
     template_name: str,
+    method: str,
     status_code: int = 200,
     mimetype: str = "text/html",
     css_blocks: List[str] = None,
+    js_blocks: List[str] = None,
+    html_blocks: List[Dict[str, str]] = None,
+    customers: List = None,
 ) -> func.HttpResponse:
     """
     :param template_name: e.g. "index.html"
     :param context:       passed straight to template.render()
     """
     template = jinja_env.get_template(template_name)
-    rendered = template.render(messages=flash_messages, css_blocks=css_blocks)
+    rendered = template.render(messages=flash_messages, method=method, css_blocks=css_blocks, js_blocks=js_blocks, html_blocks=html_blocks, customers=customers)
     return func.HttpResponse(rendered, status_code=status_code, mimetype=mimetype)
 
-def get_css_blocks(file_specific_styles: Optional[List[str]]) -> List[str]:
+def get_css_blocks(file_specific_styles: Optional[List[str]] = None) -> List[str]:
     css_blocks = []
-    css_files = os.listdir(css_dir)
-    
-    global_styles = ["base.css", "flash.css"]
+
+    global_styles = ["base.css", "flash.css", "navbar.css"]
 
     # Add global styles
     for css_file in global_styles:
@@ -80,6 +83,55 @@ def get_css_blocks(file_specific_styles: Optional[List[str]]) -> List[str]:
 
     return css_blocks
 
+def get_js_blocks(file_specific_scripts: Optional[List[str]] = None) -> List[str]:
+    js_blocks = []
+
+    # Add global scripts
+    global_scripts = ["navbar.js"]
+
+    for js_file in global_scripts:
+        js_path = os.path.join(js_dir, js_file)
+        if os.path.exists(js_path):
+            with open(js_path, 'r') as f:
+                js_blocks.append(f.read())
+
+    # Add file-specific scripts if provided
+    if file_specific_scripts:
+        for js_file in file_specific_scripts:
+            js_path = os.path.join(js_dir, js_file)
+            if os.path.exists(js_path):
+                with open(js_path, 'r') as f:
+                    js_blocks.append(f.read())
+
+    return js_blocks
+
+def get_html_blocks(file_specific_html: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    html_blocks = []
+
+    # Add global HTML blocks
+    global_html = ["navbar.html"]
+
+    for html_file in global_html:
+        html_path = os.path.join(templates_dir, html_file)
+        if os.path.exists(html_path):
+            with open(html_path, 'r') as f:
+                html_blocks.append({
+                    "name": html_file,
+                    "content": f.read()
+                })
+
+    # Add file-specific HTML blocks if provided
+    if file_specific_html:
+        for html_file in file_specific_html:
+            html_path = os.path.join(templates_dir, html_file)
+            if os.path.exists(html_path):
+                with open(html_path, 'r') as f:
+                    html_blocks.append({
+                        "name": html_file,
+                        "content": f.read()
+                    })
+
+    return html_blocks
 
 def create_containers(src_container: str, dest_container: str):
     src_stg = StorageHandler(
@@ -117,6 +169,25 @@ def create_containers(src_container: str, dest_container: str):
             flash("error", f"Failed to create destination container: {e}")
             logging.error(f"Failed to create destination container: {e}")
 
+def get_customers() -> List[str]:
+    conf_stg = StorageHandler(container_name="asiakasrajapinnat")
+
+    customers = []
+    try:
+        for cfg_file in conf_stg.list_json_blobs("CustomerConfig"):
+            try:
+                raw = conf_stg.download_blob(cfg_file)
+                data = json.loads(raw)
+                # Optionally, you can add the blob name or key so you know which is which:
+                # e.g. data["_blob_name"] = cfg_file
+                customers.append(data)
+            except Exception as e:
+                logging.error(f"Failed to parse JSON from blob '{cfg_file}': {e}")
+                continue
+    except Exception as e:
+        logging.error(f"Failed to list blobs under CustomerConfig/: {e}")
+
+    return customers
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("ServeConfig function processed a request.")
@@ -126,22 +197,30 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             method = req.params.get("method", "").strip()
             
+            template = "config_form.html"
+            
             if method == "edit":
-                template = "EditCustomer.html"
+                css_blocks = get_css_blocks(file_specific_styles=["EditCustomer.css"])
+                js_blocks = get_js_blocks(file_specific_scripts=["editCustomer.js"])
             elif method == "create":
-                template = "CreateCustomer.html"
+                css_blocks = get_css_blocks(file_specific_styles=["CreateCustomer.css"])
+                js_blocks = get_js_blocks(file_specific_scripts=["createCustomer.js"])
             else:
-                return func.HttpResponse(
-                    "Method not specified or invalid. Use 'edit' or 'create'.",
-                    status_code=400,
-                    mimetype="text/plain"
-                )
+                template = "index.html"
+                css_blocks = get_css_blocks(file_specific_styles=["index.css"])
+                js_blocks = get_js_blocks()
+                
+            html_blocks = get_html_blocks()
+                
+            customers = get_customers()
 
-            # Get CSS blocks to inject into the template
-            css_blocks = get_css_blocks(file_specific_styles=[template.replace(".html", ".css")])
             return render_template(
                 template_name=template,
-                css_blocks=css_blocks
+                method=method,
+                css_blocks=css_blocks,
+                js_blocks=js_blocks,
+                html_blocks=html_blocks,
+                customers=customers
             )
         except Exception as e:
             logging.error(f"Error rendering template: {e}")
@@ -166,6 +245,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     status_code=400,
                     mimetype="application/json"
                 )
+                
+            method = parsed.get("method", [""])[0].strip().lower()
 
             # 2.a) “enabled” is always True
             enabled = True
@@ -224,14 +305,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     part = part.strip()
                     if part:
                         exclude_list.append(part)
-
-            # 2.g) create_containers_check → boolean (true/false)
-            check_str = parsed.get("create_containers_check", [""])[0].strip()
-            if check_str == "true":
-                create_containers(src_container, dest_container)
-                check = True
-            else:
-                check = False
+                        
+            if method == "create":
+                # 2.g) create_containers_check → boolean (true/false)
+                check_str = parsed.get("create_containers_check", [""])[0].strip()
+                if check_str == "true":
+                    create_containers(src_container, dest_container)
 
             # 3) Build the final JSON structure
             result = {
@@ -243,14 +322,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 "file_format": file_format,
                 "extra_columns": extra_columns,
                 "exclude_columns": exclude_list,
-                "create_containers_check": check
             }
 
             # Upload the config JSON to Azure Blob Storage
             conf_stg = StorageHandler(container_name="asiakasrajapinnat")
 
-            json_blob_exists = conf_stg.list_json_blobs(prefix=f"CustomerConfig/{name}")
-            if json_blob_exists: # If the blob already exists, raise an error
+            if method == "create":
+                json_blob_exists = conf_stg.list_json_blobs(prefix=f"CustomerConfig/{name}")
+            else:
+                json_blob_exists = False # Skip check for edit, as we assume the blob exists if editing
+            if json_blob_exists and method == "create": # If the blob already exists, raise an error (skip check for edit)
                 logging.error(f"Configuration for customer '{name}' already exists.")
                 flash("error", f"Configuration for customer '{name}' already exists. "
                      "Please choose a different name or edit the existing configuration.")

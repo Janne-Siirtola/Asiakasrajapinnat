@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Customer Portal – Landing</title>
+
+  {% if css_blocks %}
+  <style>
+    {%- for block in css_blocks %}
+      {{ block | safe }}
+    {%- endfor %}
+  </style>
+  {% endif %}
+</head>
+<body>
+
+  {# top navigation bar #}
+  {% if html_blocks %}
+    {% for block in html_blocks if block.name == 'navbar.html' %}
+    {{ block.content | safe }}
+    {% endfor %}
+  {% endif %}
+
+  <main class="landing">
+    <h1>Customer Management</h1>
+
+    <section class="actions">
+      <a class="card create"
+         href="/api/ConfigPage?method=create">
+        <h2>Create Customer</h2>
+        <p>Add a new customer and configure its containers.</p>
+      </a>
+
+      <a class="card edit"
+         href="/api/ConfigPage?method=edit">
+        <h2>Edit Customer</h2>
+        <p>Modify or delete an existing customer.</p>
+      </a>
+    </section>
+  </main>
+
+</body>
+</html>

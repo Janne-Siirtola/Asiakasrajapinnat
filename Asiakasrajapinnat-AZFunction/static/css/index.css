@@ -1,0 +1,25 @@
+/* --- Landing page layout --- */
+.landing   { max-width: 900px; margin: 40px auto; text-align: center; }
+.actions   { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+
+.card {
+  flex: 1 1 260px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 24px 20px;
+  text-align: center;
+  text-decoration: none;
+  color: #333;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  transition: transform .15s, box-shadow .15s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+/* subtle coloured accents */
+.card.create { border-top: 4px solid #0faa0f; }
+.card.edit   { border-top: 4px solid #0078d4; }
