@@ -3,11 +3,12 @@ import numpy as np
 import pandas as pd
 from .Customer import Customer
 
-class JSONBuilder:
+
+class DataBuilder:
     """
     A class to build a JSON object from a DataFrame.
     """
-    
+
     def __init__(self, customer: Customer):
         self.decimals_map = customer.decimals_map
 
@@ -18,6 +19,14 @@ class JSONBuilder:
         # ensure leading zero, e.g. “8:5” → “08:05”
         parts = s.split(":")
         return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+
+    def format_date_and_time(self, df):
+        df["Pvm"] = (
+            pd.to_datetime(df["Pvm"], dayfirst=True)
+            .dt.strftime("%Y-%m-%d")
+        )
+        df["Kello"] = df["Kello"].apply(self.fmt_time)
+        return df
 
     def format_row(self, row):
         parts = []
@@ -36,40 +45,23 @@ class JSONBuilder:
 
     def build_json(self, df_final) -> str:
         # — format dates to ISO
-        df_final["Pvm"] = (
-            pd.to_datetime(df_final["Pvm"], dayfirst=True)
-            .dt.strftime("%Y-%m-%d")
-        )
-
-        # — format times to HH:MM
-        df_final["Kello"] = df_final["Kello"].apply(self.fmt_time)
+        df_final = self.format_date_and_time(df_final)
 
         # — normalize times (fill NaN → null in JSON)
         df_final = df_final.replace({np.nan: None})
-        
-        s = "["
+
+        json_data = "["
         rows = df_final.to_dict(orient="records")
         for i, row in enumerate(rows):
-            s += self.format_row(row) + "\n"
+            json_data += self.format_row(row) + "\n"
             if i < len(rows) - 1:
-                s += ","
-        s += "]"
-        
-        return s
-        
-        # 3) Build JSON
-        """ with open("output.json", "w", encoding="utf-8") as f:
-            f.write("[")
-            s = "["
-            rows = df_final.to_dict(orient="records")
-            for i, row in enumerate(rows):
-                s += self.format_row(row) + "\n"
-                f.write(self.format_row(row)+"\n")
-                if i < len(rows) - 1:
-                    s += ","
-                    f.write(",")
-            s += "]"
-            f.write("]")
-            
-        with open ("soutput.json", "w", encoding="utf-8") as f:
-            f.write(s) """
+                json_data += ","
+        json_data += "]"
+
+        return json_data
+
+    def build_csv(self, df_final) -> str:
+        # — format dates to ISO
+        df_final = self.format_date_and_time(df_final)
+
+        return df_final.to_csv(index=False, encoding='utf-8', sep=";", decimal=".")

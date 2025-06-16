@@ -2,7 +2,7 @@ import traceback
 from .Customer import Customer
 from .MainConfig import MainConfig
 from .DataEditor import DataEditor
-from .JSONBuilder import JSONBuilder
+from .DataBuilder import DataBuilder
 from .StorageHandler import StorageHandler
 import json
 from pathlib import Path
@@ -55,54 +55,60 @@ def main(mytimer: func.TimerRequest) -> None:
         logging.info(f"Loaded {len(customers)} customers from config.")
 
         for customer in customers:
-            if customer.enabled:
-                logging.info(f"Processing customer {customer.name}...")
+            if not customer.enabled:
+                logging.info(
+                    f"Skipping customer {customer.name} as it is not enabled.")
+                continue
 
-                stg_prefix = maincfg.src_container_prefix + customer.source_container
-                if not stg_prefix:
-                    logging.info(
-                        f"Source container for customer {customer.name} is empty.")
-                    continue
+            logging.info(f"Processing customer {customer.name}...")
 
-                df = customer.get_data(src_stg, stg_prefix)
-                if df.empty:
-                    logging.info(
-                        f"No data found for customer {customer.name}.")
-                    continue
+            stg_prefix = maincfg.src_container_prefix + customer.source_container
+            if not stg_prefix:
+                logging.info(
+                    f"Source container for customer {customer.name} is empty.")
+                continue
 
-                editor = DataEditor(df=df, customer=customer)
-                try:
-                    df_final = (editor
-                                .delete_row(0)
-                                .validate_concern_number()
-                                .drop_unmapped_columns()
-                                .reorder_columns()
-                                .cast_and_round()
-                                .validate_final_df()
-                                .df)
+            df = customer.get_data(src_stg, stg_prefix)
+            if df.empty:
+                logging.info(
+                    f"No data found for customer {customer.name}.")
+                continue
 
-                    ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
-                    if customer.file_format.lower() == "csv":
-                        data = df_final.to_csv(
-                            index=False, encoding='utf-8', sep=";", decimal=".")
-                        blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
-                    elif customer.file_format.lower() == "json":
-                        data = JSONBuilder(customer).build_json(df_final)
-                        blob_name = f"tapahtumat_{customer.name}_{ts}.json"
-                    else:
-                        raise ValueError(
-                            f"Invalid file format: {customer.file_format}")
+            editor = DataEditor(df=df, customer=customer)
+            try:
+                df_final = (editor
+                            .delete_row(0)
+                            .validate_concern_number()
+                            .drop_unmapped_columns()
+                            .reorder_columns()
+                            .cast_and_round()
+                            .validate_final_df()
+                            .df)
 
-                    dst_stg = StorageHandler(
-                        customer.destination_container, verify_existence=True)
-                    dst_stg.upload_blob(blob_name, data)
+                ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
+                
+                # Build the data in the requested format
+                data_builder = DataBuilder(customer)
+                if customer.file_format.lower() == "csv":
+                    data = data_builder.build_csv(df_final)
+                    blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
+                elif customer.file_format.lower() == "json":
+                    data = data_builder.build_json(df_final)
+                    blob_name = f"tapahtumat_{customer.name}_{ts}.json"
+                else:
+                    raise ValueError(
+                        f"Invalid file format: {customer.file_format}")
 
-                    logging.info(
-                        f"Processed customer {customer.name} successfully.")
-                except ValueError as e:
-                    logging.error(
-                        f"Error processing customer {customer.name}: {e}")
-                    continue
+                dst_stg = StorageHandler(
+                    customer.destination_container, verify_existence=True)
+                dst_stg.upload_blob(blob_name, data)
+
+                logging.info(
+                    f"Processed customer {customer.name} successfully.")
+            except ValueError as e:
+                logging.error(
+                    f"Error processing customer {customer.name}: {e}")
+                continue
 
         elapsed_time = time.perf_counter() - start_time
 

@@ -1,0 +1,32 @@
+.flash {
+  position: relative;           /* make it the positioning context */
+  padding: 10px 40px 10px 10px; /* extra right‑padding for the button */
+  border-radius: 5px;
+  margin: 5px auto;
+  max-width: 800px;
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 1s ease;
+}
+
+.flash.success { background: #0faa0f; }
+.flash.error,
+.flash.warning,
+.flash.info { background: #b90f0f; }
+
+/* your fade-out rule */
+.flash.fade-out { opacity: 0; }
+
+.flash-close {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.25em;
+  line-height: 1;
+  cursor: pointer;
+}

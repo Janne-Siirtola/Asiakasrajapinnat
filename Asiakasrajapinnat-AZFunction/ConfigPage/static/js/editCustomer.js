@@ -17,30 +17,31 @@
     dest_container: $("dest_container"),
     file_format: $("file_format"),
     exclude_columns: $("exclude_columns"),
-    extraContainer: document.getElementById("extraColumnsContainer")
+    extraContainer: document.getElementById("extraColumnsContainer"),
+    enabled: $("enabled")
   };
 
   /* extra‑column template builder */
-  function makeExtraRow(key = "", info = { name:"", dtype:"" }) {
-    const div = document.createElement("div");
-    div.className = "extra-columns-group";
-    div.innerHTML = `
-      <button type="button" class="removeColumnBtn">Poista</button>
-      <div class="form-group"><label>Avaimen nimi</label>
-        <input type="text" name="extra_key" value="${key}">
-      </div>
-      <div class="form-group"><label>Näyttönimi</label>
-        <input type="text" name="extra_name" value="${info.name}">
-      </div>
-      <div class="form-group"><label>Tietotyyppi</label>
-        <select name="extra_dtype">
-          <option value="string">String</option>
-          <option value="float">Float</option>
-        </select>
-      </div>`;
-    div.querySelector(".removeColumnBtn").onclick = () => div.remove();
-    div.querySelector("select[name='extra_dtype']").value = info.dtype || "string";
-    return div;
+  const templateEl = document.getElementById('extraColumnTemplate');
+
+  function makeExtraRow(key = "", info = { name: "", dtype: "" }) {
+    // clone the <template> content
+    const clone = templateEl.content.cloneNode(true);
+    
+    // get the root of this new group
+    const group = clone.querySelector('.extra-columns-group');
+    
+    // wire up the remove button
+    group.querySelector('.removeColumnBtn')
+        .addEventListener('click', () => group.remove());
+    
+    // fill in the values
+    group.querySelector('input[name="extra_key"]').value = key;
+    group.querySelector('input[name="extra_name"]').value = info.name;
+    group.querySelector('select[name="extra_dtype"]')
+        .value = info.dtype || 'string';
+    
+    return group;
   }
   document.getElementById("addExtraColumnBtn")
           .addEventListener("click", () =>
@@ -55,13 +56,13 @@
     const cust = customers.find(c => c.name === btn.dataset.name);
     if (!cust) return console.error("Customer not found");
 
-    formTitle.textContent = `Muokkaa: ${cust.name.toUpperCase()}`;
+    formTitle.textContent = `Edit Customer: ${cust.name.toUpperCase()}`;
     fields.name.value            = cust.name;
     fields.konserni.value        = cust.konserni.join(",");
     fields.src_container.value   = (cust.source_container || "").replace("/", "");
     fields.dest_container.value  = (cust.destination_container || "").replace("/", "");
     fields.file_format.value     = cust.file_format;
-    fields.exclude_columns.value = (cust.exclude_columns || []).join(",");
+    fields.enabled.value        = cust.enabled.toString();
 
     fields.extraContainer.innerHTML = "";
     if (cust.extra_columns) {
@@ -69,6 +70,16 @@
         fields.extraContainer.appendChild(makeExtraRow(k, info));
       }
     }
+
+    // find all of your exclude_columns checkboxes
+    document
+      .querySelectorAll('input[name="exclude_columns"]')
+      .forEach(cb => {
+        // check it if its value is in the preselected array
+        cb.checked = cust.exclude_columns.includes(cb.value);
+      });
+
+    window.updateExcludeCount();
 
     customerUl.hidden = true;
     listTitle.hidden  = true;
@@ -83,3 +94,5 @@
     listTitle.hidden  = false;
   };
 })();
+
+

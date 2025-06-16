@@ -21,6 +21,20 @@
     {% endfor %}
   {% endif %}
 
+  <!-- ⚡ flash messages -->
+  {% if messages %}
+  <div id="flash-container">
+    {% for msg in messages %}
+    <div class="flash {{ msg.category }}">
+      {{ msg.message }}
+      <!-- add this button: -->
+      <button type="button" class="flash-close" aria-label="Close">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+
   <main class="landing">
     <h1>Customer Management</h1>
 
@@ -38,6 +52,12 @@
       </a>
     </section>
   </main>
-
+  {% if js_blocks %}
+    <script>
+      {%- for block in js_blocks %}
+        {{ block | safe }}
+      {%- endfor %}
+    </script>
+  {% endif %}
 </body>
 </html>
