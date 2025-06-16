@@ -346,14 +346,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             # 4) Add a success message
             flash("success", f"Customer '{name}' created successfully.")
 
-            return render_template(
-                template_name="index.html"
-            )
             # 4) Return it as application/json
             return func.HttpResponse(
                 json.dumps(result, ensure_ascii=False),
                 status_code=200,
                 mimetype="application/json"
+            )
+            return render_template(
+                template_name="index.html"
             )
         except Exception as e:
             logging.error(f"Error processing POST request: {e}")
