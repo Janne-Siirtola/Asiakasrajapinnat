@@ -9,3 +9,14 @@ For a `TimerTrigger` to work, you provide a schedule in the form of a [cron expr
 ## Learn more
 
 <TODO> Documentation
+
+## Running tests
+
+Install dependencies (preferably in a virtual environment) and run `pytest` from the repository root:
+
+```bash
+pip install -r Asiakasrajapinnat-AZFunction/requirements.txt pytest
+pytest
+```
+
+The repository includes a `pytest.ini` that configures the test discovery.
