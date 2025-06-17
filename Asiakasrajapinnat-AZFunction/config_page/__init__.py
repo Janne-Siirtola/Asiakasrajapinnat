@@ -327,6 +327,52 @@ def _parse_extra_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, st
     return extra_columns
 
 
+def _parse_enabled(method: str, parsed: Dict[str, List[str]]) -> bool:
+    """Determine the enabled state for the configuration."""
+
+    if method == "create_customer":
+        return True
+
+    return parsed.get("enabled", [""])[0].strip().lower() == "true"
+
+
+def _parse_containers(parsed: Dict[str, List[str]]) -> Tuple[str, str, str, str]:
+    """Extract container related values from parsed form data."""
+
+    src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
+    dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
+    file_format = parsed.get("file_format", [""])[0].strip().lower()
+    file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
+
+    return src_container, dest_container, file_format, file_encoding
+
+
+def _build_result(
+    enabled: bool,
+    name: str,
+    konserni_list: List[int],
+    src_container: str,
+    dest_container: str,
+    file_format: str,
+    file_encoding: str,
+    extra_columns: Dict[str, Dict[str, str]],
+    exclude_list: List[str],
+) -> Dict[str, Any]:
+    """Assemble the configuration dictionary."""
+
+    return {
+        "enabled": enabled,
+        "name": name,
+        "konserni": konserni_list,
+        "source_container": src_container,
+        "destination_container": dest_container,
+        "file_format": file_format,
+        "file_encoding": file_encoding,
+        "extra_columns": extra_columns,
+        "exclude_columns": exclude_list,
+    }
+
+
 def parse_form_data(body: str) -> Tuple[str, Any]:
     """Parse POSTed form data and return method and configuration."""
 
@@ -340,44 +386,32 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     if method not in ["create_customer", "edit_customer"]:
         raise ValueError("Invalid method")
 
-    # Determine enabled state
-    if method == "create_customer":
-        enabled = True
-    else:
-        enabled = parsed.get("enabled", [""])[0].strip().lower() == "true"
-
+    enabled = _parse_enabled(method, parsed)
     name = parsed.get("name", [""])[0].strip().lower()
-
     konserni_raw = parsed.get("konserni", [""])[0].strip()
     konserni_list = _parse_konserni_list(konserni_raw)
-
-    src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
-    dest_container = parsed.get("dest_container", [""])[
-        0].strip().lower() + "/"
-    file_format = parsed.get("file_format", [""])[0].strip().lower()
-    file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
-
+    src_container, dest_container, file_format, file_encoding = _parse_containers(
+        parsed
+    )
     extra_columns = _parse_extra_columns(parsed)
-
     exclude_list = parsed.get("exclude_columns", [])
 
     if method == "create_customer":
-        check_str = parsed.get("create_containers_check", [""])[
-            0].strip().lower()
+        check_str = parsed.get("create_containers_check", [""])[0].strip().lower()
         if check_str == "true":
             create_containers(src_container, dest_container)
 
-    result = {
-        "enabled": enabled,
-        "name": name,
-        "konserni": konserni_list,
-        "source_container": src_container,
-        "destination_container": dest_container,
-        "file_format": file_format,
-        "file_encoding": file_encoding,
-        "extra_columns": extra_columns,
-        "exclude_columns": exclude_list,
-    }
+    result = _build_result(
+        enabled,
+        name,
+        konserni_list,
+        src_container,
+        dest_container,
+        file_format,
+        file_encoding,
+        extra_columns,
+        exclude_list,
+    )
 
     return method, result
 
