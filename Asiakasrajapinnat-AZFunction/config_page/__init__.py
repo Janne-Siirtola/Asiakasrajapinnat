@@ -160,7 +160,7 @@ def create_containers(src_container: str, dest_container: str):
             marker = history_dir + '.keep'
             src_stg.upload_blob(marker, b'', overwrite=True)
             src_stg.container_client.delete_blob(marker)
-        except Exception as e:
+        except AzureError as e:
             # if something goes wrong it’s non‐fatal—just log it
             logging.error(
                 "Could not create directory marker %s: %s",
@@ -188,7 +188,7 @@ def create_containers(src_container: str, dest_container: str):
                 "Destination container '%s' created.",
                 dest_container,
             )
-        except Exception as e:
+        except AzureError as e:
             flash("error", f"Failed to create destination container: {e}")
             logging.error(
                 "Failed to create destination container: %s",

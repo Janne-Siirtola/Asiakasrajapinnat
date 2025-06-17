@@ -7,11 +7,9 @@ asiakasrajapinnat_master\data_editor.py:9:0: R0902: Too many instance attributes
 ************* Module asiakasrajapinnat_master.main_config
 asiakasrajapinnat_master\main_config.py:9:0: R0903: Too few public methods (0/2) (too-few-public-methods)
 ************* Module config_page
-config_page\__init__.py:163:15: W0718: Catching too general exception Exception (broad-exception-caught)
-config_page\__init__.py:191:15: W0718: Catching too general exception Exception (broad-exception-caught)
 config_page\__init__.py:330:0: R0914: Too many local variables (16/15) (too-many-locals)
 config_page\__init__.py:385:0: R0912: Too many branches (14/12) (too-many-branches)
 
 ------------------------------------------------------------------
-Your code has been rated at 9.84/10 (previous run: 9.82/10, +0.02)
+Your code has been rated at 9.87/10 (previous run: 9.84/10, +0.04)
 
