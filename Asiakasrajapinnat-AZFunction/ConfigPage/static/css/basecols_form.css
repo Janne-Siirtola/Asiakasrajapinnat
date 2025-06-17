@@ -1,0 +1,116 @@
+/* ======== Reset ======== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ======== Layout ======== */
+.container {
+  max-width: 750px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* ======== Form controls ======== */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+}
+.form-group input[type="number"] {
+  width: 100px;
+}
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #0078d4;
+  outline: none;
+}
+
+/* ======== Base‑columns rows ======== */
+.base-columns-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 12px;
+  border: 1px solid #9b9b9b;
+  border-radius: 4px;
+  background: #f7f7f7;
+  margin-bottom: 10px;
+}
+
+.base-columns-group.dragging {
+  opacity: 0.5;
+}
+.base-columns-group.over {
+  border: 2px dashed #0078d4;
+}
+
+/* ======== Buttons ======== */
+button {
+  background-color: #0078d4;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+button:hover {
+  background-color: #005a9e;
+}
+
+/* “Remove” button override */
+.removeColumnBtn {
+  background-color: #e81123;
+  font-size: 13px;
+  padding: 5px 5px;
+  margin-right: 10px;
+}
+.removeColumnBtn:hover {
+  background-color: #c50f1f;
+}
+
+/* “Add Base Column” */
+#addBaseColumnBtn {
+  margin-top: 10px;
+}
+
+/* “Save” button */
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  margin-top: 20px;
+  font-size: 16px;
+}
+.submit-btn:hover,
+.submit-btn:focus {
+  background-color: #005a9e;
+}
+
+/* drag‑handle styling */
+.drag-handle {
+  margin-left: auto;       /* push to the right */
+  cursor: grab;
+  font-size: 18px;
+  padding: 4px 8px;
+  user-select: none;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}

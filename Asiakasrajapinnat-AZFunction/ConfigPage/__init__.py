@@ -217,6 +217,10 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
     if method == "edit":
         css_blocks = get_css_blocks(file_specific_styles=["config_form.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["config_form.js", "editCustomer.js"])
+    elif method == "edit_basecols":
+        template_name = "basecols_form.html"
+        css_blocks = get_css_blocks(file_specific_styles=["basecols_form.css"])
+        js_blocks = get_js_blocks(file_specific_scripts=["basecols_form.js"])
     elif method == "create":
         css_blocks = get_css_blocks(
             file_specific_styles=["config_form.css"])
@@ -244,12 +248,31 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
     }
 
 
-def parse_form_data(body: str) -> Tuple[str, Dict[str, Any]]:
+def parse_form_data(body: str) -> Tuple[str, Any]:
     """Parse POSTed form data and return method and configuration."""
 
     parsed = parse_qs(body)
 
     method = parsed.get("method", [""])[0].strip().lower()
+    if method == "edit_basecols":
+        keys = parsed.get("key", [])
+        names = parsed.get("name", [])
+        dtypes = parsed.get("dtype", [])
+        decimals = parsed.get("decimals", [])
+        basecols: Dict[str, Dict[str, Any]] = {}
+        for k, n, dt, dec in zip(keys, names, dtypes, decimals):
+            k = k.strip()
+            if not k:
+                continue
+            col = {"name": n.strip(), "dtype": dt.strip()}
+            if dt.strip() == "float" and dec.strip():
+                try:
+                    col["decimals"] = int(dec)
+                except ValueError:
+                    flash(
+                        "error", f"Invalid decimal value for column '{k}': {dec.strip()}")
+            basecols[k] = col
+        return method, basecols
     if method not in ["create", "edit"]:
         raise ValueError("Invalid method")
 
@@ -331,7 +354,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 raw_body = req.get_body().decode("utf-8")
                 method, result = parse_form_data(raw_body)
-                name = result["name"]
+                name = result["name"] if isinstance(result, dict) and "name" in result else ""
             except Exception as e:
                 logging.error(f"Failed to parse POST body: {e}")
                 return func.HttpResponse(
@@ -341,34 +364,56 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 )
 
             # Upload the config JSON to Azure Blob Storage
-            if method == "create":
+            if method == "edit_basecols":
+                main_cfg = MainConfig(conf_stg)
+                new_cfg = {
+                    "customer_config_path": main_cfg.customer_config_path,
+                    "src_container_prefix": main_cfg.src_container_prefix,
+                    "base_columns": result,
+                }
+                conf_stg.upload_blob(
+                    "MainConfig.json",
+                    json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),
+                    overwrite=True,
+                )
+            elif method == "create":
                 json_blob_exists = conf_stg.list_json_blobs(
                     prefix=f"CustomerConfig/{name}")
             else:
                 json_blob_exists = False  # Skip check for edit, as we assume the blob exists if editing
-            # If the blob already exists, raise an error (skip check for edit)
-            if json_blob_exists and method == "create":
-                logging.error(
-                    f"Configuration for customer '{name}' already exists.")
-                flash(
-                    "error", f"Configuration for customer '{name}' already exists. Please choose a different name.")
-            else:  # If it does not exist, upload the new configuration
-                logging.info(f"Uploading configuration for customer '{name}'")
-                conf_stg.upload_blob(
-                    blob_name=f"CustomerConfig/{name}.json",
-                    data=json.dumps(
-                        result, ensure_ascii=False).encode("utf-8"),
-                    overwrite=True
-                )
+            if method in ["create", "edit"]:
+                # If the blob already exists, raise an error (skip check for edit)
+                if json_blob_exists and method == "create":
+                    logging.error(
+                        f"Configuration for customer '{name}' already exists.")
+                    flash(
+                        "error", f"Configuration for customer '{name}' already exists. Please choose a different name.")
+                else:  # If it does not exist, upload the new configuration
+                    logging.info(f"Uploading configuration for customer '{name}'")
+                    conf_stg.upload_blob(
+                        blob_name=f"CustomerConfig/{name}.json",
+                        data=json.dumps(
+                            result, ensure_ascii=False).encode("utf-8"),
+                        overwrite=True
+                    )
 
             # 4) Add a success message if no errors occurred
-            has_error = any(f["category"] == "error" for f in flash_messages)
+            error_occurred = any(f["category"] == "error" for f in flash_messages)
 
-            if method == "create" and not has_error:
+            if method == "create" and not error_occurred:
                 flash("success", f"Customer '{name}' created successfully.")
-            elif method == "edit" and not has_error:
+            elif method == "edit" and not error_occurred:
                 flash("success", f"Customer '{name}' updated successfully.")
-
+            elif method == "edit_basecols" and not error_occurred:
+                flash("success", "Base columns updated successfully.")
+                
+            # DEBUG: Return the result as JSON for debugging purposes
+            return func.HttpResponse(
+                json.dumps(result, ensure_ascii=False),
+                status_code=200,
+                mimetype="application/json"
+            )
+            
             # Redirect to the index page after processing
             context = prepare_template_context()
             return render_template(**context)
