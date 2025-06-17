@@ -13,7 +13,7 @@ from azure.storage.blob import ContentSettings
 from jinja2 import Environment, FileSystemLoader, TemplateError, select_autoescape
 
 from asiakasrajapinnat_master.storage_handler import StorageHandler
-from asiakasrajapinnat_master.main_config import MainConfig
+from asiakasrajapinnat_master.main_config import load_main_config
 
 # version 1.21
 src_stg = StorageHandler(container_name="vitecpowerbi")
@@ -253,7 +253,7 @@ def prepare_template_context(
 
     customers = get_customers()
 
-    main_config = MainConfig(conf_stg)
+    main_config = load_main_config(conf_stg)
 
     return {
         "template_name": template_name,

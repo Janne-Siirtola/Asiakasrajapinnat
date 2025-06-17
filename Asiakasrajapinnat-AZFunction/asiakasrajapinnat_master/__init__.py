@@ -14,7 +14,7 @@ from azure.storage.blob import ContentSettings
 from .customer import Customer, CustomerConfig
 from .data_builder import DataBuilder
 from .data_editor import DataEditor
-from .main_config import MainConfig
+from .main_config import load_main_config
 from .storage_handler import StorageHandler
 
 # version 1.24
@@ -114,7 +114,7 @@ def main() -> None:
             container_name="vitecpowerbi", verify_existence=True
         )
 
-        maincfg = MainConfig(conf_stg)
+        maincfg = load_main_config(conf_stg)
 
         customers = load_customers_from_config(maincfg.base_columns, conf_stg)
         logging.info("Loaded %d customers from config.", len(customers))
