@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <title>
       Asiakasrajapinnat -
-      {{ "Create Customer" if method == "create" else "Edit Customer" }}
+      {{ "Create Customer" if method == "create_customer" else "Edit Customer" }}
     </title>
 
     {# — optional raw‑CSS blocks if you still use that mechanism — #}
@@ -43,7 +43,7 @@
       {# ─────────────────────────────────────────────────────
       1. CUSTOMER LIST (only in “edit” mode)
       ───────────────────────────────────────────────────── #}
-      {% if method == "edit" %}
+      {% if method == "edit_customer" %}
       <h1 id="listTitle">Choose Customer</h1>
       <ul id="customerList" class="customer-list">
         {% for cust in customers %}
@@ -58,15 +58,15 @@
       {# ─────────────────────────────────────────────────────
       2. FORM (visible in “create”, hidden in “edit” until JS shows it)
       ───────────────────────────────────────────────────── #}
-      <form id="{{ 'configForm' if method == 'create' else 'editForm' }}"
+      <form id="{{ 'configForm' if method == 'create_customer' else 'editForm' }}"
         method="post" action
-        {% if method == 'edit' %}hidden{% endif %}>
+        {% if method == 'edit_customer' %}hidden{% endif %}>
 
         <!-- let the backend know what we were doing -->
         <input type="hidden" name="method" value="{{ method }}">
 
         <h1 id="formTitle">
-          {{ "Create Customer" if method == "create" else "" }}
+          {{ "Create Customer" if method == "create_customer" else "" }}
         </h1>
 
         <!-- Customer Name (read‑only in edit) -->
@@ -74,9 +74,9 @@
           <label for="name" h>Customer Name 
           </label> 
           <input type="text" id="name" name="name"
-          {% if method == 'edit' %}readonly{% endif %}
+          {% if method == 'edit_customer' %}readonly{% endif %}
           placeholder="e.g. yit" required>
-          {% if method == 'edit' %}
+          {% if method == 'edit_customer' %}
             <small>Read-Only while editing</small>
           {% endif %}
         </div>
@@ -94,9 +94,9 @@
           <label for="src_container">Source Container
           </label>
           <input type="text" id="src_container" name="src_container"
-          {% if method == 'edit' %}readonly{% endif %}
+          {% if method == 'edit_customer' %}readonly{% endif %}
           placeholder="e.g. testi" required>
-          {% if method == 'edit' %}
+          {% if method == 'edit_customer' %}
             <small>Read-Only while editing</small>
           {% endif %}
         </div>
@@ -106,9 +106,9 @@
           <label for="dest_container">Destination Container
           </label>
           <input type="text" id="dest_container" name="dest_container"
-          {% if method == 'edit' %}readonly{% endif %}
+          {% if method == 'edit_customer' %}readonly{% endif %}
           placeholder="e.g. testi" required>
-          {% if method == 'edit' %}
+          {% if method == 'edit_customer' %}
             <small>Read-Only while editing</small>
           {% endif %}
         </div>
@@ -124,7 +124,7 @@
 
         <!-- File Encoding-->
         <div class="form-group">
-          <label for="file_encoding">File Encoding</label>
+          <label for="file_encoding">Output File Encoding</label>
           <select id="file_encoding" name="file_encoding" required>
             <option value="utf-8">UTF-8</option>
             <option value="iso-8859-1">ISO-8859-1</option>
@@ -133,7 +133,7 @@
 
         <!-- Extra Columns (template + container) -->
         <fieldset>
-          <legend>Extra Columns {{ "(optional)" if method == "create" else ""
+          <legend>Extra Columns {{ "(optional)" if method == "create_customer" else ""
             }}</legend>
           <div id="extraColumnsContainer"></div>
 
@@ -161,7 +161,7 @@
 
 
           <button type="button" id="addExtraColumnBtn">
-            {{ "+ Add Extra Column" if method == "create" else "+ Lisää sarake"
+            {{ "+ Add Extra Column" if method == "create_customer" else "+ Lisää sarake"
             }}
           </button>
         </fieldset>
@@ -169,7 +169,7 @@
         <!-- Exclude Columns -->
         <div class="form-group">
           <label>
-            Exclude From Base Columns {{ "(optional)" if method=="create" else "" }}
+            Exclude From Base Columns {{ "(optional)" if method=="create_customer" else "" }}
             <span id="excludeCount">0 selected</span>
           </label>
           <div id="excludeList" class="exclude-list">
@@ -187,7 +187,7 @@
 
 
         <!-- Create Containers (only in create mode) -->
-        {% if method == "create" %}
+        {% if method == "create_customer" %}
         <div class="form-group">
           <label for="create_containers_check">
             Do you want to create source and destination containers for this
@@ -201,7 +201,7 @@
         {% endif %}
 
         <!-- Enabled (only in edit mode) -->
-        {% if method == "edit" %}
+        {% if method == "edit_customer" %}
         <div class="form-group">
           <label for="enabled">Enabled</label>
           <select id="enabled" name="enabled" required>
@@ -213,10 +213,10 @@
 
         <!-- Submit / Cancel -->
         <button type="submit" class="submit-btn">
-          {{ "Create Customer" if method == "create" else "Save" }}
+          {{ "Create Customer" if method == "create_customer" else "Save" }}
         </button>
 
-        {% if method == "edit" %}
+        {% if method == "edit_customer" %}
         <button type="button" id="cancelBtn" class="submit-btn"
           style="margin-top:8px;background:#777;">
           Cancel
@@ -226,7 +226,7 @@
     </div>
 
     {# customer JSON only needed for edit‑page JS #}
-    {% if method == "edit" %}
+    {% if method == "edit_customer" %}
     <script id="customersData" type="application/json">
       {{ customers | tojson }}
     </script>

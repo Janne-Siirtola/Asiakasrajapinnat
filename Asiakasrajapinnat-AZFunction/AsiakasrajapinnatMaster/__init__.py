@@ -8,7 +8,7 @@ from .DataBuilder import DataBuilder
 from .StorageHandler import StorageHandler
 import json
 from pathlib import Path
-from typing import List, Union
+from typing import List, Dict
 import logging
 import pytz
 from datetime import datetime
@@ -29,13 +29,13 @@ def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
     return finland_time.strftime(strftime)
 
 
-def load_customers_from_config(maincfg: MainConfig, storage: StorageHandler) -> List[Customer]:
+def load_customers_from_config(base_columns: Dict[str, Dict[str, str]], storage: StorageHandler) -> List[Customer]:
     """Read all customer JSON configs and instantiate ``Customer`` objects."""
     customers: List[Customer] = []
-    for cfg_file in storage.list_json_blobs(prefix=maincfg.customer_config_path):
+    for cfg_file in storage.list_json_blobs(prefix="CustomerConfig/"):
         json_data = storage.download_blob(cfg_file)
         data = json.loads(json_data)
-        customer = Customer(**data, base_columns=maincfg.base_columns)
+        customer = Customer(**data, base_columns=base_columns)
         customers.append(customer)
     return customers
 
@@ -56,7 +56,7 @@ def main(mytimer: func.TimerRequest) -> None:
 
         maincfg = MainConfig(conf_stg)
 
-        customers = load_customers_from_config(maincfg, conf_stg)
+        customers = load_customers_from_config(maincfg.base_columns, conf_stg)
         logging.info(f"Loaded {len(customers)} customers from config.")
 
         for customer in customers:
@@ -67,7 +67,7 @@ def main(mytimer: func.TimerRequest) -> None:
 
             logging.info(f"Processing customer {customer.name}...")
 
-            stg_prefix = maincfg.src_container_prefix + customer.source_container
+            stg_prefix = "Rajapinta/" + customer.source_container
             if not stg_prefix:
                 logging.info(
                     f"Source container for customer {customer.name} is empty.")
@@ -91,11 +91,12 @@ def main(mytimer: func.TimerRequest) -> None:
                             .df)
 
                 ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
-                
+
                 # Build the data in the requested format
                 data_builder = DataBuilder(customer)
                 if customer.file_format.lower() == "csv":
-                    data = data_builder.build_csv(df_final, encoding=customer.file_encoding)
+                    data = data_builder.build_csv(
+                        df_final, encoding=customer.file_encoding)
                     blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
                     content_settings = ContentSettings(
                         content_type=f"text/csv; charset={customer.file_encoding}"
@@ -113,7 +114,8 @@ def main(mytimer: func.TimerRequest) -> None:
                 dst_stg = StorageHandler(
                     customer.destination_container, verify_existence=True)
 
-                dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
+                dst_stg.upload_blob(
+                    blob_name, data, content_settings=content_settings)
 
                 logging.info(
                     f"Processed customer {customer.name} successfully.")
