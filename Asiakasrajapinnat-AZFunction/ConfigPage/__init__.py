@@ -1,9 +1,12 @@
+"""HTTP endpoint serving the configuration UI and form processing."""
+
 import logging
 import traceback
-import azure.functions as func
-from typing import Dict, List, Optional
 import os
 import json
+from typing import Any, Dict, List, Optional, Tuple
+
+import azure.functions as func
 from urllib.parse import parse_qs
 
 from AsiakasrajapinnatMaster.StorageHandler import StorageHandler
@@ -54,10 +57,7 @@ def render_template(
     messages: List[Dict[str, str]] = None,
     base_columns: Dict[str, Dict[str, str]] = None
 ) -> func.HttpResponse:
-    """
-    :param template_name: e.g. "index.html"
-    :param context:       passed straight to template.render()
-    """
+    """Render a Jinja2 template and wrap it into an HTTP response."""
     if not messages:
         messages = flash_messages
 
@@ -69,6 +69,8 @@ def render_template(
 
 
 def get_css_blocks(file_specific_styles: Optional[List[str]] = None) -> List[str]:
+    """Return a list of CSS snippets for the page."""
+
     css_blocks = []
 
     global_styles = ["base.css", "flash.css", "navbar.css"]
@@ -92,6 +94,8 @@ def get_css_blocks(file_specific_styles: Optional[List[str]] = None) -> List[str
 
 
 def get_js_blocks(file_specific_scripts: Optional[List[str]] = None) -> List[str]:
+    """Return a list of JavaScript snippets for the page."""
+
     js_blocks = []
 
     # Add global scripts
@@ -116,6 +120,8 @@ def get_js_blocks(file_specific_scripts: Optional[List[str]] = None) -> List[str
 
 
 def get_html_blocks(file_specific_html: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """Return HTML template fragments to include in the page."""
+
     html_blocks = []
 
     # Add global HTML blocks
@@ -145,6 +151,7 @@ def get_html_blocks(file_specific_html: Optional[List[str]] = None) -> List[Dict
 
 
 def create_containers(src_container: str, dest_container: str):
+    """Create source and destination containers if they do not exist."""
 
     # Create source directory + history directory
     prefix = f"Rajapinta/{src_container}"
@@ -181,6 +188,7 @@ def create_containers(src_container: str, dest_container: str):
 
 
 def get_customers() -> List[str]:
+    """Load customer configuration files from storage."""
 
     customers = []
     try:
@@ -202,6 +210,8 @@ def get_customers() -> List[str]:
 
 
 def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = flash_messages) -> Dict[str, any]:
+    """Collect template data for rendering HTML pages."""
+
     template_name = "config_form.html"
 
     if method == "edit":
@@ -234,7 +244,68 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
     }
 
 
+def parse_form_data(body: str) -> Tuple[str, Dict[str, Any]]:
+    """Parse POSTed form data and return method and configuration."""
+
+    parsed = parse_qs(body)
+
+    method = parsed.get("method", [""])[0].strip().lower()
+    if method not in ["create", "edit"]:
+        raise ValueError("Invalid method")
+
+    # Determine enabled state
+    if method == "create":
+        enabled = True
+    else:
+        enabled = parsed.get("enabled", [""])[0].strip().lower() == "true"
+
+    name = parsed.get("name", [""])[0].strip().lower()
+
+    konserni_raw = parsed.get("konserni", [""])[0].strip()
+    konserni_list = []
+    for part in filter(None, [p.strip() for p in konserni_raw.split(",")]):
+        try:
+            konserni_list.append(int(part))
+        except ValueError:
+            logging.warning(f"Ignoring non-numeric konserni token: '{part}'")
+
+    src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
+    dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
+    file_format = parsed.get("file_format", [""])[0].strip().lower()
+
+    extra_keys = parsed.get("extra_key", [])
+    extra_names = parsed.get("extra_name", [])
+    extra_dtypes = parsed.get("extra_dtype", [])
+    extra_columns: Dict[str, Dict[str, str]] = {}
+    for key, disp, dt in zip(extra_keys, extra_names, extra_dtypes):
+        key = key.strip()
+        if key:
+            extra_columns[key] = {"name": disp.strip(), "dtype": dt.strip()}
+
+    exclude_list = parsed.get("exclude_columns", [""])
+
+    if method == "create":
+        check_str = parsed.get("create_containers_check", [""])[0].strip().lower()
+        if check_str == "true":
+            create_containers(src_container, dest_container)
+
+    result = {
+        "enabled": enabled,
+        "name": name,
+        "konserni": konserni_list,
+        "source_container": src_container,
+        "destination_container": dest_container,
+        "file_format": file_format,
+        "extra_columns": extra_columns,
+        "exclude_columns": exclude_list,
+    }
+
+    return method, result
+
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
+    """Azure Function entry point for serving and processing the form."""
+
     logging.info("ServeConfig function processed a request.")
 
     flash_messages.clear()  # Clear previous flash messages
@@ -258,120 +329,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     elif req.method == "POST":
         try:
             try:
-                # Azure Functions HttpRequest gives us raw body bytes:
                 raw_body = req.get_body().decode("utf-8")
-                # Use parse_qs so that array‐style fields (e.g. extra_key[]) become Python lists
-                parsed = parse_qs(raw_body)
+                method, result = parse_form_data(raw_body)
+                name = result["name"]
             except Exception as e:
                 logging.error(f"Failed to parse POST body: {e}")
                 return func.HttpResponse(
-                    json.dumps({"error": "Could not parse form data"}),
+                    json.dumps({"error": str(e)}),
                     status_code=400,
                     mimetype="application/json"
                 )
-
-            method = parsed.get("method", [""])[0].strip().lower()
-            if method not in ["create", "edit"]:
-                logging.error(f"Invalid method: {method}")
-                return func.HttpResponse(
-                    json.dumps({"error": "Invalid method"}),
-                    status_code=400,
-                    mimetype="application/json"
-                )
-
-            # 2.a) “enabled” is True or False
-            # If method is "create", we assume enabled is True by default.
-            if method == "create":
-                enabled = True
-            else:
-                enabled = parsed.get("enabled", [""])[0].strip().lower()
-                # Convert to boolean
-                enabled = enabled.lower() == "true"
-
-            # 2.b) name (string)
-            name = parsed.get("name", [""])[0].strip().lower()
-
-            # 2.c) konserni → expect comma-separated numbers
-            konserni_raw = parsed.get("konserni", [""])[0].strip()
-            konserni_list = []
-            if konserni_raw:
-                # Split on commas, strip whitespace, convert to int if possible
-                for part in konserni_raw.split(","):
-                    part = part.strip()
-                    if not part:
-                        continue
-                    try:
-                        konserni_list.append(int(part))
-                    except ValueError:
-                        # If it fails to convert, you can decide to (a) ignore it or (b) store as string.
-                        # Here, we’ll ignore non-numeric tokens.
-                        logging.warning(
-                            f"Ignoring non-numeric konserni token: '{part}'")
-                        continue
-
-            # 2.d) source_container & destination_container & file_format
-            src_container = parsed.get("src_container", [""])[
-                0].strip().lower() + "/"
-            dest_container = parsed.get("dest_container", [""])[
-                0].strip().lower() + "/"
-            file_format = parsed.get("file_format", [""])[0].strip().lower()
-
-            # 2.e) extra_columns → arrays extra_key[], extra_name[], extra_dtype[]
-            extra_keys = parsed.get("extra_key", [])
-            extra_names = parsed.get("extra_name", [])
-            extra_dtypes = parsed.get("extra_dtype", [])
-
-            extra_columns = {}
-            # Zip them together. If lengths differ, zip stops at the shortest.
-            for key, disp, dt in zip(extra_keys, extra_names, extra_dtypes):
-                key = key.strip()
-                disp = disp.strip()
-                dt = dt.strip()
-                # Only add if key is non-empty
-                if key:
-                    extra_columns[key] = {
-                        "name": disp,
-                        "dtype": dt
-                    }
-
-            # 2.f) exclude_columns → comma-separated list of keys
-            exclude_raw = parsed.get("exclude_columns", [""])[0].strip()
-            exclude_list = []
-            if exclude_raw:
-                for part in exclude_raw.split(","):
-                    part = part.strip()
-                    if part:
-                        exclude_list.append(part)
-
-            exclude_list = parsed.get("exclude_columns", [""])
-            if method == "create":
-                # 2.g) create_containers_check → boolean (true/false)
-                check_str = parsed.get("create_containers_check", [""])[
-                    0].strip()
-                if check_str == "true":
-                    create_containers(src_container, dest_container)
-
-            # 3) Build the final JSON structure
-            result = {
-                "enabled": enabled,
-                "name": name,
-                "konserni": konserni_list,
-                "source_container": src_container,
-                "destination_container": dest_container,
-                "file_format": file_format,
-                "extra_columns": extra_columns,
-                "exclude_columns": exclude_list,
-            }
-            debugresult = {
-                "enabled": enabled,
-                "name": name,
-                "konserni": konserni_list,
-                "source_container": src_container,
-                "destination_container": dest_container,
-                "file_format": file_format,
-                "extra_columns": extra_columns,
-                "exclude_columns": exclude_list,
-            }
 
             # Upload the config JSON to Azure Blob Storage
             if method == "create":
@@ -405,12 +372,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             # Redirect to the index page after processing
             context = prepare_template_context()
             return render_template(**context)
-            # 4) Return it as application/json
-            return func.HttpResponse(
-                json.dumps(debugresult, ensure_ascii=False),
-                status_code=200,
-                mimetype="application/json"
-            )
         except Exception as e:
             logging.error(f"Error processing POST request: {e}")
             return func.HttpResponse(
