@@ -216,13 +216,11 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
 
     if method == "edit_customer":
         css_blocks = get_css_blocks(file_specific_styles=["customer_config.css"])
-        js_blocks = get_js_blocks(file_specific_scripts=[
-                                  "customer_config.js", "edit_customer.js"])
+        js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "create_customer":
         css_blocks = get_css_blocks(
             file_specific_styles=["customer_config.css"])
-        js_blocks = get_js_blocks(file_specific_scripts=[
-                                  "customer_config.js", "create_customer.js"])
+        js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "edit_basecols":
         template_name = "basecols_form.html"
         css_blocks = get_css_blocks(file_specific_styles=["basecols_form.css"])
