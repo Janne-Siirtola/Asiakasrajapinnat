@@ -98,13 +98,25 @@ fieldset {
 }
 
 .extra-columns-group {
-  position: relative;
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;  /* top‑align the button & fields */
   padding: 12px;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  background-color: #f7f7f7;
+  background: #f7f7f7;
 }
+
+.extra-columns-group > .removeColumnBtn {
+  margin-left: auto;        /* push it to the right */
+  padding: 8px 12px;
+  background: #e81123;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 
 .extra-columns-group label {
   font-weight: 500;
@@ -113,8 +125,7 @@ fieldset {
 
 /* ======== Buttons ======== */
 /* Generic buttons and remove-column */
-button,
-.removeColumnBtn {
+button {
   background-color: #0078d4;
   color: #ffffff;
   border: none;
@@ -124,20 +135,17 @@ button,
   font-size: 14px;
 }
 
-button:hover,
-.removeColumnBtn:hover {
+button:hover {
   background-color: #005a9e;
 }
 
 /* Specific remove-column override */
 .removeColumnBtn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   background-color: #e81123;
-  margin-top: 0;        /* reset margin-top from CreateCustomer.css */
   font-size: 13px;
-  padding: 6px 10px;
+  padding: 5px 5px;
+  margin-right: 10px;
+
 }
 
 .removeColumnBtn:hover {
@@ -220,7 +228,8 @@ button:hover,
 }
 
 /* give the count a little breathing room */
-#excludeCount {
+#excludeCount,
+#readOnlyHint {
   font-weight: normal;
   margin-left: 0.5em;
   color: #555;

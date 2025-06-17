@@ -70,11 +70,14 @@
 
         <!-- Customer Name (read‑only in edit) -->
         <div class="form-group">
-          <label for="name" h>Customer Name {% if method == 'edit' %}(Can't be
-            changed){% endif %}</label>
+          <label for="name" h>Customer Name 
+          </label> 
           <input type="text" id="name" name="name"
-            {% if method == 'edit' %}readonly{% endif %}
-            placeholder="e.g. yit" required>
+          {% if method == 'edit' %}readonly{% endif %}
+          placeholder="e.g. yit" required>
+          {% if method == 'edit' %}
+            <small>Read-Only while editing</small>
+          {% endif %}
         </div>
 
         <!-- Concern Numbers -->
@@ -87,25 +90,31 @@
 
         <!-- Source Container (read‑only in edit) -->
         <div class="form-group">
-          <label for="src_container">Source Container {% if method == 'edit'
-            %}(Can't be changed){% endif %}</label>
+          <label for="src_container">Source Container
+          </label>
           <input type="text" id="src_container" name="src_container"
-            {% if method == 'edit' %}readonly{% endif %}
-            placeholder="e.g. testi" required>
+          {% if method == 'edit' %}readonly{% endif %}
+          placeholder="e.g. testi" required>
+          {% if method == 'edit' %}
+            <small>Read-Only while editing</small>
+          {% endif %}
         </div>
 
         <!-- Destination Container (read‑only in edit) -->
         <div class="form-group">
-          <label for="dest_container">Destination Container {% if method ==
-            'edit' %}(Can't be changed){% endif %}</label>
+          <label for="dest_container">Destination Container
+          </label>
           <input type="text" id="dest_container" name="dest_container"
-            {% if method == 'edit' %}readonly{% endif %}
-            placeholder="e.g. testi" required>
+          {% if method == 'edit' %}readonly{% endif %}
+          placeholder="e.g. testi" required>
+          {% if method == 'edit' %}
+            <small>Read-Only while editing</small>
+          {% endif %}
         </div>
 
         <!-- File Format -->
         <div class="form-group">
-          <label for="file_format">File Format</label>
+          <label for="file_format">Output File Format</label>
           <select id="file_format" name="file_format" required>
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
@@ -121,7 +130,7 @@
           <!-- Template to clone -->
           <template id="extraColumnTemplate">
             <div class="extra-columns-group">
-              <button type="button" class="removeColumnBtn">Remove Column</button>
+              <button type="button" class="removeColumnBtn">Remove</button>
               <div class="form-group">
                 <label>Column Key</label>
                 <input type="text" name="extra_key" placeholder="e.g. PRTName">
