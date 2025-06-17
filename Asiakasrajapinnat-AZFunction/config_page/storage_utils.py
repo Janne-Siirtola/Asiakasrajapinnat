@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List
+from typing import List, Optional, Dict
 
 from azure.core.exceptions import AzureError
 
@@ -15,8 +15,14 @@ src_stg = StorageHandler(container_name="vitecpowerbi")
 conf_stg = StorageHandler(container_name="asiakasrajapinnat")
 
 
-def create_containers(src_container: str, dest_container: str) -> None:
+def create_containers(
+    src_container: str,
+    dest_container: str,
+    messages: Optional[List[Dict[str, str]]] = None,
+) -> None:
     """Create source and destination containers if they do not exist."""
+    if messages is None:
+        messages = []
     prefix = f"Rajapinta/{src_container}"
     history_dir = prefix + "history/"
 
@@ -35,6 +41,7 @@ def create_containers(src_container: str, dest_container: str) -> None:
     else:
         src_container = src_container.strip("/")
         flash(
+            messages,
             "error",
             f"Source container '{src_container}' already exists. "
             "Please choose a different name.",
@@ -44,6 +51,7 @@ def create_containers(src_container: str, dest_container: str) -> None:
     if dst_stg.container_exists():
         dest_container = dest_container.strip("/")
         flash(
+            messages,
             "error",
             f"Destination container '{dest_container}' already exists. "
             "Please choose a different name.",
@@ -53,7 +61,8 @@ def create_containers(src_container: str, dest_container: str) -> None:
             dst_stg.create_container()
             logging.info("Destination container '%s' created.", dest_container)
         except AzureError as e:
-            flash("error", f"Failed to create destination container: {e}")
+            flash(messages, "error",
+                  f"Failed to create destination container: {e}")
             logging.error("Failed to create destination container: %s", e)
 
 
@@ -61,13 +70,14 @@ def get_customers() -> List[str]:
     """Load customer configuration files from storage."""
     customers: List[str] = []
     try:
-        for cfg_file in conf_stg.list_json_blobs("CustomerConfig"):
+        for cfg_file in conf_stg.list_json_blobs("customer_config"):
             try:
                 raw = conf_stg.download_blob(cfg_file)
                 data = json.loads(raw)
                 customers.append(data)
             except (AzureError, json.JSONDecodeError) as e:
-                logging.error("Failed to parse JSON from blob '%s': %s", cfg_file, e)
+                logging.error(
+                    "Failed to parse JSON from blob '%s': %s", cfg_file, e)
                 continue
     except AzureError as e:
         logging.error("Failed to list blobs under CustomerConfig/: %s", e)

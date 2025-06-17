@@ -17,12 +17,9 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml"]),
 )
 
-flash_messages: List[Dict[str, str]] = []
-
-
-def flash(category: str = "error", message: str = "") -> None:
-    """Add a flash message to the global list."""
-    flash_messages.append({"category": category, "message": message})
+def flash(messages: List[Dict[str, str]], category: str = "error", message: str = "") -> None:
+    """Append a flash message to ``messages``."""
+    messages.append({"category": category, "message": message})
 
 
 def render_template(context: Dict[str, Any]) -> func.HttpResponse:
@@ -32,7 +29,7 @@ def render_template(context: Dict[str, Any]) -> func.HttpResponse:
     mimetype = context.get("mimetype", "text/html")
 
     render_args = context.copy()
-    messages = render_args.get("messages") or flash_messages
+    messages = render_args.get("messages") or []
     render_args["messages"] = messages
     render_args.pop("template_name", None)
     render_args.pop("status_code", None)

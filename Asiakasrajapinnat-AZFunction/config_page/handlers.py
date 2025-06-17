@@ -16,7 +16,6 @@ from .form_parser import parse_form_data
 from .storage_utils import conf_stg, get_customers
 from .utils import (
     flash,
-    flash_messages,
     get_css_blocks,
     get_html_blocks,
     get_js_blocks,
@@ -30,7 +29,7 @@ def prepare_template_context(
 ) -> Dict[str, Any]:
     """Collect template data for rendering HTML pages."""
     if messages is None:
-        messages = flash_messages
+        messages = []
 
     template_name = "customer_config_form.html"
 
@@ -82,7 +81,8 @@ def handle_get(req: func.HttpRequest) -> func.HttpResponse:
     """Process a GET request."""
     try:
         method = req.params.get("method", "").strip()
-        context = prepare_template_context(method=method, messages=[])
+        messages: List[Dict[str, str]] = []
+        context = prepare_template_context(method=method, messages=messages)
         return render_template(context)
     except (TemplateError, AzureError) as err:
         return handle_error(err)
@@ -91,9 +91,10 @@ def handle_get(req: func.HttpRequest) -> func.HttpResponse:
 def handle_post(req: func.HttpRequest) -> func.HttpResponse:
     """Process a POST request."""
     try:
+        messages: List[Dict[str, str]] = []
         try:
             raw_body = req.get_body().decode("utf-8")
-            method, result = parse_form_data(raw_body)
+            method, result = parse_form_data(raw_body, messages)
             name = result["name"] if isinstance(
                 result, dict) and "name" in result else ""
         except (ValueError, json.JSONDecodeError, AzureError) as err:
@@ -118,13 +119,14 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
         json_blob_exists = False
         if method == "create_customer":
             json_blob_exists = conf_stg.list_json_blobs(
-                prefix=f"CustomerConfig/{name}")
+                prefix=f"customer_config/{name}")
 
         if method in ["create_customer", "edit_customer"]:
             if json_blob_exists and method == "create_customer":
                 logging.error(
                     "Configuration for customer '%s' already exists.", name)
                 flash(
+                    messages,
                     "error",
                     f"Configuration for customer '{name}' already exists. "
                     "Please choose a different name.",
@@ -132,7 +134,7 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
             else:
                 logging.info("Uploading configuration for customer '%s'", name)
                 conf_stg.upload_blob(
-                    blob_name=f"CustomerConfig/{name}.json",
+                    blob_name=f"customer_config/{name}.json",
                     data=json.dumps(
                         result, ensure_ascii=False).encode("utf-8"),
                     overwrite=True,
@@ -141,16 +143,18 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                     ),
                 )
 
-        error_occurred = any(f["category"] == "error" for f in flash_messages)
+        error_occurred = any(f["category"] == "error" for f in messages)
 
         if method == "create_customer" and not error_occurred:
-            flash("success", f"Customer '{name}' created successfully.")
+            flash(messages, "success",
+                  f"Customer '{name}' created successfully.")
         elif method == "edit_customer" and not error_occurred:
-            flash("success", f"Customer '{name}' updated successfully.")
+            flash(messages, "success",
+                  f"Customer '{name}' updated successfully.")
         elif method == "edit_basecols" and not error_occurred:
-            flash("success", "Base columns updated successfully.")
+            flash(messages, "success", "Base columns updated successfully.")
 
-        context = prepare_template_context()
+        context = prepare_template_context(messages=messages)
         return render_template(context)
     except (AzureError, TemplateError, ValueError) as err:
         return handle_error(err)

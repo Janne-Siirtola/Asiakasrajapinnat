@@ -9,7 +9,9 @@ from .storage_utils import create_containers
 from .utils import flash
 
 
-def _parse_base_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, Any]]:
+def _parse_base_columns(
+    parsed: Dict[str, List[str]], messages: List[Dict[str, str]]
+) -> Dict[str, Dict[str, Any]]:
     """Extract base column configuration from parsed form data."""
     keys = parsed.get("key", [])
     names = parsed.get("name", [])
@@ -26,12 +28,12 @@ def _parse_base_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, Any
             try:
                 col["decimals"] = int(dec)
             except ValueError:
-                flash("error", f"Invalid decimal value for column '{k}': {dec.strip()}")
+                flash(messages, "error", f"Invalid decimal value for column '{k}': {dec.strip()}")
         basecols[k] = col
     return basecols
 
 
-def _parse_konserni_list(raw_value: str) -> List[int]:
+def _parse_konserni_list(raw_value: str, messages: List[Dict[str, str]]) -> List[int]:
     """Parse a comma separated list of konserni ids."""
     konserni_list: List[int] = []
     for part in filter(None, [p.strip() for p in raw_value.split(",")]):
@@ -39,7 +41,7 @@ def _parse_konserni_list(raw_value: str) -> List[int]:
             konserni_list.append(int(part))
         except ValueError:
             logging.warning("Ignoring non-numeric konserni token: '%s'", part)
-            flash("error", f"Invalid konserni value: '{part}'. Please enter numeric values only.")
+            flash(messages, "error", f"Invalid konserni value: '{part}'. Please enter numeric values only.")
     return konserni_list
 
 
@@ -98,13 +100,16 @@ def _build_result(
     }
 
 
-def parse_form_data(body: str) -> Tuple[str, Any]:
+def parse_form_data(
+    body: str,
+    messages: List[Dict[str, str]],
+) -> Tuple[str, Any]:
     """Parse POSTed form data and return method and configuration."""
     parsed = parse_qs(body, keep_blank_values=True)
 
     method = parsed.get("method", [""])[0].strip().lower()
     if method == "edit_basecols":
-        basecols = _parse_base_columns(parsed)
+        basecols = _parse_base_columns(parsed, messages)
         return method, basecols
 
     if method not in ["create_customer", "edit_customer"]:
@@ -113,7 +118,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     enabled = _parse_enabled(method, parsed)
     name = parsed.get("name", [""])[0].strip().lower()
     konserni_raw = parsed.get("konserni", [""])[0].strip()
-    konserni_list = _parse_konserni_list(konserni_raw)
+    konserni_list = _parse_konserni_list(konserni_raw, messages)
     src_container, dest_container, file_format, file_encoding = _parse_containers(parsed)
     extra_columns = _parse_extra_columns(parsed)
     exclude_list = parsed.get("exclude_columns", [])
@@ -121,7 +126,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     if method == "create_customer":
         check_str = parsed.get("create_containers_check", [""])[0].strip().lower()
         if check_str == "true":
-            create_containers(src_container, dest_container)
+            create_containers(src_container, dest_container, messages)
 
     result = _build_result(
         enabled,
