@@ -30,7 +30,8 @@ class CustomerMappings:
     rename_map: Dict[str, str] = field(default_factory=dict)
     dtype_map: Dict[str, str] = field(default_factory=dict)
     decimals_map: Dict[str, int] = field(default_factory=dict)
-    combined_columns: Dict[str, Dict[str, Union[str, int]]] = field(default_factory=dict)
+    combined_columns: Dict[str, Dict[str, Union[str, int]]] = field(
+        default_factory=dict)
     allowed_columns: Dict[str, str] = field(default_factory=dict)
 
 
@@ -105,15 +106,15 @@ class Customer:
             if key not in extra:
                 self.mappings.combined_columns[key] = value
             else:
-                print(
-                    f"Duplicate key '{key}' found in base_columns, skipping.")
+                logging.info(
+                    "Duplicate key '%s' found in base_columns, skipping.", key)
 
         for key, value in extra.items():
             if key not in self.mappings.combined_columns:
                 self.mappings.combined_columns[key] = value
             else:
-                print(
-                    f"Duplicate key '{key}' found in extra_columns, skipping.")
+                logging.info(
+                    "Duplicate key '%s' found in extra_columns, skipping.", key)
 
     def generate_data_maps(self) -> None:
         """Create rename, dtype and decimals mappings for processing."""

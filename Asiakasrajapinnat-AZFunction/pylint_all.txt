@@ -1,13 +1,10 @@
 ************* Module asiakasrajapinnat_master.customer
 asiakasrajapinnat_master\customer.py:13:0: R0902: Too many instance attributes (10/7) (too-many-instance-attributes)
-************* Module asiakasrajapinnat_master.data_editor
-asiakasrajapinnat_master\data_editor.py:9:0: R0902: Too many instance attributes (9/7) (too-many-instance-attributes)
-************* Module asiakasrajapinnat_master.main_config
-asiakasrajapinnat_master\main_config.py:9:0: R0903: Too few public methods (0/2) (too-few-public-methods)
-************* Module config_page
-config_page\__init__.py:330:0: R0914: Too many local variables (16/15) (too-many-locals)
-config_page\__init__.py:385:0: R0912: Too many branches (14/12) (too-many-branches)
+************* Module config_page.form_parser
+config_page\form_parser.py:76:0: R0913: Too many arguments (9/5) (too-many-arguments)
+config_page\form_parser.py:76:0: R0917: Too many positional arguments (9/5) (too-many-positional-arguments)
+config_page\form_parser.py:101:0: R0914: Too many local variables (16/15) (too-many-locals)
 
 ------------------------------------------------------------------
-Your code has been rated at 9.91/10 (previous run: 9.87/10, +0.04)
+Your code has been rated at 9.93/10 (previous run: 9.90/10, +0.03)
 
