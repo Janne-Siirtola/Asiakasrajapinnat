@@ -39,9 +39,9 @@ class Customer:
         self.base_columns = base_columns
         self.exclude_columns = exclude_columns if exclude_columns else []
 
-  
-        for c in self.exclude_columns:
-            self.base_columns.pop(c)
+        if self.exclude_columns:
+            for c in self.exclude_columns:
+                self.base_columns.pop(c)
 
         self.rename_map: Dict[str, str] = {}
         self.dtype_map: Dict[str, str] = {}

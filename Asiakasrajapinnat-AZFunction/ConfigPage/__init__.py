@@ -292,6 +292,9 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
             konserni_list.append(int(part))
         except ValueError:
             logging.warning(f"Ignoring non-numeric konserni token: '{part}'")
+            flash(
+                "error", f"Invalid konserni value: '{part}'. Please enter numeric values only."
+            )
 
     src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
     dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
@@ -307,7 +310,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
         if key:
             extra_columns[key] = {"name": disp.strip(), "dtype": dt.strip()}
 
-    exclude_list = parsed.get("exclude_columns", [""])
+    exclude_list = parsed.get("exclude_columns", [])
 
     if method == "create":
         check_str = parsed.get("create_containers_check", [""])[0].strip().lower()
