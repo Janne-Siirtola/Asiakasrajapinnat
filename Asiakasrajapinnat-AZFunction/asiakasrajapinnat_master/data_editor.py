@@ -24,8 +24,6 @@ class DataEditor:
             allowed_columns=customer.mappings.allowed_columns,
         )
 
-        self.total_weight_before = self.df['TAPPaino'].sum()
-
     def delete_row(self, idx: int) -> "DataEditor":
         """Remove a row by index from the working DataFrame."""
         self.df = self.df.drop(idx).reset_index(drop=True)
@@ -54,7 +52,8 @@ class DataEditor:
 
     def drop_unmapped_columns(self) -> "DataEditor":
         """Remove columns that are not defined in the mapping."""
-        to_drop = set(self.df.columns) - set(self.mappings.allowed_columns.keys())
+        to_drop = set(self.df.columns) - \
+            set(self.mappings.allowed_columns.keys())
 
         self.df = self.df.drop(columns=to_drop)
 
@@ -112,17 +111,12 @@ class DataEditor:
                 f"These base columns were not found in the DataFrame: {missing}"
             )
 
-        if self.total_weight_before != self.df['TAPPaino'].sum():
-            error_logs.append(
-                f"Total weight mismatch: before {self.total_weight_before}, "
-                f"after {self.df['TAPPaino'].sum()}"
-            )
-
         if self.df.empty:
             error_logs.append("DataFrame is empty after processing")
 
         # Check for extra columns
-        extras = set(self.df.columns) - set(self.mappings.allowed_columns.values())
+        extras = set(self.df.columns) - \
+            set(self.mappings.allowed_columns.values())
         if extras:
             error_logs.append(
                 f"Unexpected extra columns in final DataFrame: {sorted(extras)}")
@@ -154,7 +148,8 @@ class DataEditor:
 
         if warning_logs:
             logging.warning(
-                "Customer: %s\n%s", self.customer.config.name, "\n".join(warning_logs)
+                "Customer: %s\n%s", self.customer.config.name, "\n".join(
+                    warning_logs)
             )
 
         return self

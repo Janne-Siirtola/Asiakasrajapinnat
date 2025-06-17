@@ -17,7 +17,7 @@ from .data_editor import DataEditor
 from .main_config import load_main_config
 from .storage_handler import StorageHandler
 
-# version 1.24
+# version 1.25
 
 
 def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
@@ -55,11 +55,6 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     logging.info("Processing customer %s...", customer.config.name)
 
     stg_prefix = "Rajapinta/" + customer.config.source_container
-    if not stg_prefix:
-        logging.info(
-            "Source container for customer %s is empty.", customer.config.name
-        )
-        return
 
     df = customer.get_data(src_stg, stg_prefix)
     if df.empty:
@@ -100,7 +95,7 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     logging.info("Processed customer %s successfully.", customer.config.name)
 
 
-def main() -> None:
+def main(mytimer: func.TimerRequest) -> None:
     """Entry point for the timer triggered function."""
     try:
         logging.basicConfig(level=logging.INFO)
