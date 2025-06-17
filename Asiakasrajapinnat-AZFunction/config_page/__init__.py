@@ -416,6 +416,96 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     return method, result
 
 
+def handle_error(err: Exception) -> func.HttpResponse:
+    """Return a 500 ``HttpResponse`` with the error message."""
+
+    logging.error("Unexpected error: %s", err)
+    return func.HttpResponse(
+        json.dumps({"error": str(traceback.format_exc())}),
+        status_code=500,
+        mimetype="application/json",
+    )
+
+
+def handle_get(req: func.HttpRequest) -> func.HttpResponse:
+    """Process a GET request."""
+
+    try:
+        method = req.params.get("method", "").strip()
+        context = prepare_template_context(method=method, messages=[])
+        return render_template(context)
+    except (TemplateError, AzureError) as err:
+        return handle_error(err)
+
+
+def handle_post(req: func.HttpRequest) -> func.HttpResponse:
+    """Process a POST request."""
+
+    try:
+        try:
+            raw_body = req.get_body().decode("utf-8")
+            method, result = parse_form_data(raw_body)
+            name = result["name"] if isinstance(result, dict) and "name" in result else ""
+        except (ValueError, json.JSONDecodeError, AzureError) as err:
+            logging.error("Failed to parse POST body: %s", err)
+            return func.HttpResponse(
+                json.dumps({"error": str(err)}),
+                status_code=400,
+                mimetype="application/json",
+            )
+
+        if method == "edit_basecols":
+            new_cfg = {"base_columns": result}
+            conf_stg.upload_blob(
+                "MainConfig.json",
+                json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),
+                overwrite=True,
+                content_settings=ContentSettings(
+                    content_type="application/json; charset=utf-8"
+                ),
+            )
+
+        json_blob_exists = False
+        if method == "create_customer":
+            json_blob_exists = conf_stg.list_json_blobs(prefix=f"CustomerConfig/{name}")
+
+        if method in ["create_customer", "edit_customer"]:
+            if json_blob_exists and method == "create_customer":
+                logging.error(
+                    "Configuration for customer '%s' already exists.",
+                    name,
+                )
+                flash(
+                    "error",
+                    f"Configuration for customer '{name}' already exists. "
+                    "Please choose a different name.",
+                )
+            else:
+                logging.info("Uploading configuration for customer '%s'", name)
+                conf_stg.upload_blob(
+                    blob_name=f"CustomerConfig/{name}.json",
+                    data=json.dumps(result, ensure_ascii=False).encode("utf-8"),
+                    overwrite=True,
+                    content_settings=ContentSettings(
+                        content_type="application/json; charset=utf-8"
+                    ),
+                )
+
+        error_occurred = any(f["category"] == "error" for f in flash_messages)
+
+        if method == "create_customer" and not error_occurred:
+            flash("success", f"Customer '{name}' created successfully.")
+        elif method == "edit_customer" and not error_occurred:
+            flash("success", f"Customer '{name}' updated successfully.")
+        elif method == "edit_basecols" and not error_occurred:
+            flash("success", "Base columns updated successfully.")
+
+        context = prepare_template_context()
+        return render_template(context)
+    except (AzureError, TemplateError, ValueError) as err:
+        return handle_error(err)
+
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """Azure Function entry point for serving and processing the form."""
 
@@ -423,109 +513,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     flash_messages.clear()  # Clear previous flash messages
 
-    # 1) If GET → just return the HTML form
     if req.method == "GET":
-        try:
-            method = req.params.get("method", "").strip()
-
-            context = prepare_template_context(method=method, messages=[])
-            return render_template(context)
-        except (TemplateError, AzureError) as e:
-            logging.error("Error rendering template: %s", e)
-            return func.HttpResponse(
-                json.dumps({"error_in_get": str(traceback.format_exc())}),
-                status_code=500,
-                mimetype="application/json"
-            )
-
-    # 2) If POST → parse everything and build the JSON
-    elif req.method == "POST":
-        try:
-            try:
-                raw_body = req.get_body().decode("utf-8")
-                method, result = parse_form_data(raw_body)
-                name = result["name"] if isinstance(
-                    result, dict) and "name" in result else ""
-            except (ValueError, json.JSONDecodeError, AzureError) as e:
-                logging.error("Failed to parse POST body: %s", e)
-                return func.HttpResponse(
-                    json.dumps({"error": str(e)}),
-                    status_code=400,
-                    mimetype="application/json"
-                )
-
-            # Upload the config JSON to Azure Blob Storage
-            if method == "edit_basecols":
-                new_cfg = {
-                    "base_columns": result
-                }
-                conf_stg.upload_blob(
-                    "MainConfig.json",
-                    json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),
-                    overwrite=True,
-                    content_settings=ContentSettings(
-                        content_type="application/json; charset=utf-8")
-                )
-            json_blob_exists = False
-            if method == "create_customer":
-                json_blob_exists = conf_stg.list_json_blobs(
-                    prefix=f"CustomerConfig/{name}")
-            if method in ["create_customer", "edit_customer"]:
-                # If the blob already exists, raise an error (skip check for edit)
-                if json_blob_exists and method == "create_customer":
-                    logging.error(
-                        "Configuration for customer '%s' already exists.",
-                        name,
-                    )
-                    flash(
-                        "error", f"Configuration for customer '{name}' already exists. "
-                        "Please choose a different name.")
-                else:  # If it does not exist, upload the new configuration
-                    logging.info(
-                        "Uploading configuration for customer '%s'",
-                        name,
-                    )
-                    conf_stg.upload_blob(
-                        blob_name=f"CustomerConfig/{name}.json",
-                        data=json.dumps(
-                            result, ensure_ascii=False).encode("utf-8"),
-                        overwrite=True,
-                        content_settings=ContentSettings(
-                            content_type="application/json; charset=utf-8")
-                    )
-
-            # 4) Add a success message if no errors occurred
-            error_occurred = any(
-                f["category"] == "error" for f in flash_messages)
-
-            if method == "create_customer" and not error_occurred:
-                flash("success", f"Customer '{name}' created successfully.")
-            elif method == "edit_customer" and not error_occurred:
-                flash("success", f"Customer '{name}' updated successfully.")
-            elif method == "edit_basecols" and not error_occurred:
-                flash("success", "Base columns updated successfully.")
-
-            # DEBUG: Return the result as JSON for debugging purposes
-            # return func.HttpResponse(
-            #     json.dumps(result, ensure_ascii=False),
-            #     status_code=200,
-            #     mimetype="application/json"
-            # )
-
-            # Redirect to the index page after processing
-            context = prepare_template_context()
-            return render_template(context)
-        except (AzureError, TemplateError, ValueError) as e:
-            logging.error("Error processing POST request: %s", e)
-            return func.HttpResponse(
-                json.dumps({"error_in_post": str(traceback.format_exc())}),
-                status_code=500,
-                mimetype="application/json"
-            )
-    # 3) Any other HTTP verb → 405
-    else:
-        return func.HttpResponse(
-            "Method Not Allowed",
-            status_code=405,
-            mimetype="text/plain"
-        )
+        return handle_get(req)
+    if req.method == "POST":
+        return handle_post(req)
+    return func.HttpResponse(
+        "Method Not Allowed",
+        status_code=405,
+        mimetype="text/plain",
+    )
