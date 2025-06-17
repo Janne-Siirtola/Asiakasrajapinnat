@@ -10,8 +10,8 @@ import azure.functions as func
 from azure.storage.blob import ContentSettings
 from urllib.parse import parse_qs
 
-from AsiakasrajapinnatMaster.StorageHandler import StorageHandler
-from AsiakasrajapinnatMaster.MainConfig import MainConfig
+from asiakasrajapinnat_master.storage_handler import StorageHandler
+from asiakasrajapinnat_master.main_config import MainConfig
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # version 1.21
@@ -29,7 +29,7 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml"])
 )
 
-flash_messages = []  # List[Dict[str, str]], List of flash messages to be displayed
+flash_messages = []
 
 
 def flash(category: str = "error", message: str = "") -> None:
@@ -215,7 +215,8 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
     template_name = "customer_config_form.html"
 
     if method == "edit_customer":
-        css_blocks = get_css_blocks(file_specific_styles=["customer_config.css"])
+        css_blocks = get_css_blocks(
+            file_specific_styles=["customer_config.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "create_customer":
         css_blocks = get_css_blocks(

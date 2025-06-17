@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 import json
-from .StorageHandler import StorageHandler
+from .storage_handler import StorageHandler
 
 
 class MainConfig:

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import logging
 import io
-from .StorageHandler import StorageHandler
+from .storage_handler import StorageHandler
 
 
 class Customer:

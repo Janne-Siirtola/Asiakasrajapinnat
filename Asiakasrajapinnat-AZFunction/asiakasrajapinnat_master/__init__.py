@@ -1,11 +1,11 @@
 """Timer triggered pipeline that processes and exports customer data."""
 
 import traceback
-from .Customer import Customer
-from .MainConfig import MainConfig
-from .DataEditor import DataEditor
-from .DataBuilder import DataBuilder
-from .StorageHandler import StorageHandler
+from .customer import Customer
+from .main_config import MainConfig
+from .data_editor import DataEditor
+from .data_builder import DataBuilder
+from .storage_handler import StorageHandler
 import json
 from pathlib import Path
 from typing import List, Dict
@@ -29,7 +29,9 @@ def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
     return finland_time.strftime(strftime)
 
 
-def load_customers_from_config(base_columns: Dict[str, Dict[str, str]], storage: StorageHandler) -> List[Customer]:
+def load_customers_from_config(
+    base_columns: Dict[str, Dict[str, str]], 
+    storage: storage_handler) -> List[Customer]:
     """Read all customer JSON configs and instantiate ``Customer`` objects."""
     customers: List[Customer] = []
     for cfg_file in storage.list_json_blobs(prefix="CustomerConfig/"):
@@ -40,7 +42,7 @@ def load_customers_from_config(base_columns: Dict[str, Dict[str, str]], storage:
     return customers
 
 
-def main(mytimer: func.TimerRequest) -> None:
+def main() -> None:
     """Entry point for the timer triggered function."""
     try:
         logging.basicConfig(
@@ -49,12 +51,12 @@ def main(mytimer: func.TimerRequest) -> None:
         logging.info(f"Process started at {get_timestamp()}.")
         start_time = time.perf_counter()
 
-        conf_stg = StorageHandler(
+        conf_stg = storage_handler(
             container_name="asiakasrajapinnat", verify_existence=True)
-        src_stg = StorageHandler(
+        src_stg = storage_handler(
             container_name="vitecpowerbi", verify_existence=True)
 
-        maincfg = MainConfig(conf_stg)
+        maincfg = main_config(conf_stg)
 
         customers = load_customers_from_config(maincfg.base_columns, conf_stg)
         logging.info(f"Loaded {len(customers)} customers from config.")
@@ -79,7 +81,7 @@ def main(mytimer: func.TimerRequest) -> None:
                     f"No data found for customer {customer.name}.")
                 continue
 
-            editor = DataEditor(df=df, customer=customer)
+            editor = data_editor(df=df, customer=customer)
             try:
                 df_final = (editor
                             .delete_row(0)
@@ -93,7 +95,7 @@ def main(mytimer: func.TimerRequest) -> None:
                 ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
 
                 # Build the data in the requested format
-                data_builder = DataBuilder(customer)
+                data_builder = data_builder(customer)
                 if customer.file_format.lower() == "csv":
                     data = data_builder.build_csv(
                         df_final, encoding=customer.file_encoding)
@@ -111,7 +113,7 @@ def main(mytimer: func.TimerRequest) -> None:
                     raise ValueError(
                         f"Invalid file format: {customer.file_format}")
 
-                dst_stg = StorageHandler(
+                dst_stg = storage_handler(
                     customer.destination_container, verify_existence=True)
 
                 dst_stg.upload_blob(
