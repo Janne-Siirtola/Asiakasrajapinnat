@@ -1,3 +1,5 @@
+"""Timer triggered pipeline that processes and exports customer data."""
+
 import traceback
 from .Customer import Customer
 from .MainConfig import MainConfig
@@ -28,6 +30,7 @@ def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
 
 
 def load_customers_from_config(maincfg: MainConfig, storage: StorageHandler) -> List[Customer]:
+    """Read all customer JSON configs and instantiate ``Customer`` objects."""
     customers: List[Customer] = []
     for cfg_file in storage.list_json_blobs(prefix=maincfg.customer_config_path):
         json_data = storage.download_blob(cfg_file)
@@ -38,6 +41,7 @@ def load_customers_from_config(maincfg: MainConfig, storage: StorageHandler) -> 
 
 
 def main(mytimer: func.TimerRequest) -> None:
+    """Entry point for the timer triggered function."""
     try:
         logging.basicConfig(
             level=logging.INFO,

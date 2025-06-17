@@ -1,4 +1,5 @@
 (function () {
+  // Handles dynamic fields when creating a new customer
   // Grab the <template>, the container, and the “Add” button
   const template   = document.getElementById('extraColumnTemplate');
   const container  = document.getElementById('extraColumnsContainer');
