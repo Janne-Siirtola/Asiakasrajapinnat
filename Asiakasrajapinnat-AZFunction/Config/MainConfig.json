@@ -1,6 +1,4 @@
 {
-    "customer_config_path": "CustomerConfig",
-    "src_container_prefix": "Rajapinta/",
     "base_columns": {
         "TAPAsnro": {
             "name": "Asiakasnro", 

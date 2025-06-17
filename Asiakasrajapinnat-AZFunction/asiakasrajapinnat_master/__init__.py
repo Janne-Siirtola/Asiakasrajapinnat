@@ -35,7 +35,7 @@ def load_customers_from_config(
     storage: StorageHandler) -> List[Customer]:
     """Read all customer JSON configs and instantiate ``Customer`` objects."""
     customers: List[Customer] = []
-    for cfg_file in storage.list_json_blobs(prefix="CustomerConfig/"):
+    for cfg_file in storage.list_json_blobs(prefix="customer_config/"):
         json_data = storage.download_blob(cfg_file)
         data = json.loads(json_data)
         cfg = CustomerConfig(base_columns=base_columns, **data)

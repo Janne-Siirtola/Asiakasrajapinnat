@@ -16,10 +16,10 @@ class MainConfig:
 
 
 def load_main_config(conf_stg: StorageHandler) -> MainConfig:
-    """Load ``MainConfig.json`` from storage and return the configuration."""
-    json_data = conf_stg.download_blob("MainConfig.json")
+    """Load ``main_config.json`` from storage and return the configuration."""
+    json_data = conf_stg.download_blob("main_config.json")
     if not json_data:
         raise ValueError(
-            "MainConfig.json is empty or not found in the storage.")
+            "main_config.json is empty or not found in the storage.")
     raw = json.loads(json_data)
     return MainConfig(base_columns=raw.get("base_columns", {}))

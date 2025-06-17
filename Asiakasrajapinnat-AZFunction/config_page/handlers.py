@@ -35,10 +35,12 @@ def prepare_template_context(
     template_name = "customer_config_form.html"
 
     if method == "edit_customer":
-        css_blocks = get_css_blocks(file_specific_styles=["customer_config.css"])
+        css_blocks = get_css_blocks(
+            file_specific_styles=["customer_config.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "create_customer":
-        css_blocks = get_css_blocks(file_specific_styles=["customer_config.css"])
+        css_blocks = get_css_blocks(
+            file_specific_styles=["customer_config.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "edit_basecols":
         template_name = "basecols_form.html"
@@ -92,7 +94,8 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
         try:
             raw_body = req.get_body().decode("utf-8")
             method, result = parse_form_data(raw_body)
-            name = result["name"] if isinstance(result, dict) and "name" in result else ""
+            name = result["name"] if isinstance(
+                result, dict) and "name" in result else ""
         except (ValueError, json.JSONDecodeError, AzureError) as err:
             logging.error("Failed to parse POST body: %s", err)
             return func.HttpResponse(
@@ -104,7 +107,7 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
         if method == "edit_basecols":
             new_cfg = {"base_columns": result}
             conf_stg.upload_blob(
-                "MainConfig.json",
+                "main_config.json",
                 json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),
                 overwrite=True,
                 content_settings=ContentSettings(
@@ -114,11 +117,13 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
 
         json_blob_exists = False
         if method == "create_customer":
-            json_blob_exists = conf_stg.list_json_blobs(prefix=f"CustomerConfig/{name}")
+            json_blob_exists = conf_stg.list_json_blobs(
+                prefix=f"CustomerConfig/{name}")
 
         if method in ["create_customer", "edit_customer"]:
             if json_blob_exists and method == "create_customer":
-                logging.error("Configuration for customer '%s' already exists.", name)
+                logging.error(
+                    "Configuration for customer '%s' already exists.", name)
                 flash(
                     "error",
                     f"Configuration for customer '{name}' already exists. "
@@ -128,7 +133,8 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                 logging.info("Uploading configuration for customer '%s'", name)
                 conf_stg.upload_blob(
                     blob_name=f"CustomerConfig/{name}.json",
-                    data=json.dumps(result, ensure_ascii=False).encode("utf-8"),
+                    data=json.dumps(
+                        result, ensure_ascii=False).encode("utf-8"),
                     overwrite=True,
                     content_settings=ContentSettings(
                         content_type="application/json; charset=utf-8"
