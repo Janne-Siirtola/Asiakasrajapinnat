@@ -7,13 +7,12 @@
     "source_container": "testi/",
     "destination_container": "testi/",
     "file_format": "json",
+    "file_encoding": "utf-8",
     "extra_columns": {
         "PRTName": {
             "name": "Asiakasryhma", 
             "dtype": "string"
         }
     },
-    "exclude_columns": [
-        "PRTName"
-    ]
+    "exclude_columns": []
 }

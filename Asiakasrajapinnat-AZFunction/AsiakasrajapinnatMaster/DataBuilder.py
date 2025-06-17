@@ -60,8 +60,8 @@ class DataBuilder:
 
         return json_data
 
-    def build_csv(self, df_final) -> str:
+    def build_csv(self, df_final, encoding) -> str:
         # — format dates to ISO
         df_final = self.format_date_and_time(df_final)
 
-        return df_final.to_csv(index=False, encoding='utf-8', sep=";", decimal=".")
+        return df_final.to_csv(index=False, encoding=encoding, sep=";", decimal=".")

@@ -7,6 +7,7 @@ import json
 from typing import Any, Dict, List, Optional, Tuple
 
 import azure.functions as func
+from azure.storage.blob import ContentSettings
 from urllib.parse import parse_qs
 
 from AsiakasrajapinnatMaster.StorageHandler import StorageHandler
@@ -251,7 +252,7 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
 def parse_form_data(body: str) -> Tuple[str, Any]:
     """Parse POSTed form data and return method and configuration."""
 
-    parsed = parse_qs(body)
+    parsed = parse_qs(body, keep_blank_values=True)
 
     method = parsed.get("method", [""])[0].strip().lower()
     if method == "edit_basecols":
@@ -295,6 +296,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
     dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
     file_format = parsed.get("file_format", [""])[0].strip().lower()
+    file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
 
     extra_keys = parsed.get("extra_key", [])
     extra_names = parsed.get("extra_name", [])
@@ -319,6 +321,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
         "source_container": src_container,
         "destination_container": dest_container,
         "file_format": file_format,
+        "file_encoding": file_encoding,
         "extra_columns": extra_columns,
         "exclude_columns": exclude_list,
     }
@@ -375,6 +378,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     "MainConfig.json",
                     json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),
                     overwrite=True,
+                    content_settings=ContentSettings(content_type="application/json; charset=utf-8")
                 )
             elif method == "create":
                 json_blob_exists = conf_stg.list_json_blobs(
@@ -394,7 +398,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                         blob_name=f"CustomerConfig/{name}.json",
                         data=json.dumps(
                             result, ensure_ascii=False).encode("utf-8"),
-                        overwrite=True
+                        overwrite=True,
+                        content_settings=ContentSettings(content_type="application/json; charset=utf-8")
                     )
 
             # 4) Add a success message if no errors occurred
@@ -408,11 +413,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 flash("success", "Base columns updated successfully.")
                 
             # DEBUG: Return the result as JSON for debugging purposes
-            return func.HttpResponse(
+            """ return func.HttpResponse(
                 json.dumps(result, ensure_ascii=False),
                 status_code=200,
                 mimetype="application/json"
-            )
+            ) """
             
             # Redirect to the index page after processing
             context = prepare_template_context()

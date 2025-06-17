@@ -16,6 +16,7 @@
     src_container: $("src_container"),
     dest_container: $("dest_container"),
     file_format: $("file_format"),
+    file_encoding: $("file_encoding"),
     exclude_columns: $("exclude_columns"),
     extraContainer: document.getElementById("extraColumnsContainer"),
     enabled: $("enabled")
@@ -61,8 +62,9 @@
     fields.konserni.value        = cust.konserni.join(",");
     fields.src_container.value   = (cust.source_container || "").replace("/", "");
     fields.dest_container.value  = (cust.destination_container || "").replace("/", "");
-    fields.file_format.value     = cust.file_format;
-    fields.enabled.value        = cust.enabled.toString();
+    fields.file_format.value     = cust.file_format || "";
+    fields.file_encoding.value   = cust.file_encoding || "";
+    fields.enabled.value        = cust.enabled.toString() || "";
 
     fields.extraContainer.innerHTML = "";
     if (cust.extra_columns) {

@@ -1,4 +1,4 @@
-from azure.storage.blob import BlobServiceClient, ContainerClient, BlobClient
+from azure.storage.blob import BlobServiceClient, ContainerClient, BlobClient, ContentSettings
 from typing import List, Optional
 import os
 import logging
@@ -66,10 +66,14 @@ class StorageHandler:
             blob_name)
         return blob_client.download_blob().readall()
 
-    def upload_blob(self, blob_name: str, data: bytes, overwrite: bool = True) -> None:
+    def upload_blob(self, blob_name: str, data: bytes, overwrite: bool = True, content_settings: Optional[ContentSettings] = None) -> None:
         blob_client: BlobClient = self.container_client.get_blob_client(
             blob_name)
-        blob_client.upload_blob(data, overwrite=overwrite)
+        
+        if content_settings is None:
+            blob_client.upload_blob(data, overwrite=overwrite)
+        else:
+            blob_client.upload_blob(data, overwrite=overwrite, content_settings=content_settings)
 
     def move_file_to_dir(
         self,

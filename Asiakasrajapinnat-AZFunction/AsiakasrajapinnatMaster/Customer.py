@@ -20,6 +20,7 @@ class Customer:
         source_container: str,
         destination_container: str,
         file_format: str,
+        file_encoding: str,
         extra_columns: Optional[Dict[str, Dict[str, str]]],
         enabled: bool,
         base_columns: Dict[str, Dict[str, str]],
@@ -31,6 +32,7 @@ class Customer:
         self.source_container = source_container
         self.destination_container = destination_container
         self.file_format = file_format
+        self.file_encoding = file_encoding
         self.extra_columns = extra_columns
         self.enabled = enabled
 

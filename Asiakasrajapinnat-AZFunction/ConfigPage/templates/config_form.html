@@ -121,6 +121,15 @@
           </select>
         </div>
 
+        <!-- File Encoding-->
+        <div class="form-group">
+          <label for="file_encoding">File Encoding</label>
+          <select id="file_encoding" name="file_encoding" required>
+            <option value="utf-8">UTF-8</option>
+            <option value="iso-8859-1">ISO-8859-1</option>
+            <option value="windows-1252">Windows-1252</option>
+          </select>
+
         <!-- Extra Columns (template + container) -->
         <fieldset>
           <legend>Extra Columns {{ "(optional)" if method == "create" else ""

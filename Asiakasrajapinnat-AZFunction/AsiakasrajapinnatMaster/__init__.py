@@ -12,6 +12,7 @@ import pytz
 from datetime import datetime
 import time
 import azure.functions as func
+from azure.storage.blob import ContentSettings
 
 # version 1.24
 
@@ -90,18 +91,25 @@ def main(mytimer: func.TimerRequest) -> None:
                 # Build the data in the requested format
                 data_builder = DataBuilder(customer)
                 if customer.file_format.lower() == "csv":
-                    data = data_builder.build_csv(df_final)
+                    data = data_builder.build_csv(df_final, encoding=customer.file_encoding)
                     blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
+                    content_settings = ContentSettings(
+                        content_type=f"text/csv; charset={customer.file_encoding}"
+                    )
                 elif customer.file_format.lower() == "json":
                     data = data_builder.build_json(df_final)
                     blob_name = f"tapahtumat_{customer.name}_{ts}.json"
+                    content_settings = ContentSettings(
+                        content_type=f"application/octet-stream; charset={customer.file_encoding}"
+                    )
                 else:
                     raise ValueError(
                         f"Invalid file format: {customer.file_format}")
 
                 dst_stg = StorageHandler(
                     customer.destination_container, verify_existence=True)
-                dst_stg.upload_blob(blob_name, data)
+
+                dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
 
                 logging.info(
                     f"Processed customer {customer.name} successfully.")
