@@ -3,7 +3,7 @@
 import json
 import numpy as np
 import pandas as pd
-from .Customer import Customer
+from .customer import Customer
 
 
 class DataBuilder:
@@ -12,7 +12,7 @@ class DataBuilder:
     """
 
     def __init__(self, customer: Customer):
-        self.decimals_map = customer.decimals_map
+        self.decimals_map = customer.mappings.decimals_map
 
     def fmt_time(self, t):
         """Format time values to HH:MM or return ``None`` if empty."""

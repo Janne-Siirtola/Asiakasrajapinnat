@@ -11,7 +11,7 @@ import pytz
 import azure.functions as func
 from azure.storage.blob import ContentSettings
 
-from .customer import Customer
+from .customer import Customer, CustomerConfig
 from .data_builder import DataBuilder
 from .data_editor import DataEditor
 from .main_config import MainConfig
@@ -38,29 +38,32 @@ def load_customers_from_config(
     for cfg_file in storage.list_json_blobs(prefix="CustomerConfig/"):
         json_data = storage.download_blob(cfg_file)
         data = json.loads(json_data)
-        customer = Customer(**data, base_columns=base_columns)
+        cfg = CustomerConfig(base_columns=base_columns, **data)
+        customer = Customer(cfg)
         customers.append(customer)
     return customers
 
 
 def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     """Process a single customer and upload the resulting file."""
-    if not customer.enabled:
-        logging.info("Skipping customer %s as it is not enabled.", customer.name)
+    if not customer.config.enabled:
+        logging.info(
+            "Skipping customer %s as it is not enabled.", customer.config.name
+        )
         return
 
-    logging.info("Processing customer %s...", customer.name)
+    logging.info("Processing customer %s...", customer.config.name)
 
-    stg_prefix = "Rajapinta/" + customer.source_container
+    stg_prefix = "Rajapinta/" + customer.config.source_container
     if not stg_prefix:
         logging.info(
-            "Source container for customer %s is empty.", customer.name
+            "Source container for customer %s is empty.", customer.config.name
         )
         return
 
     df = customer.get_data(src_stg, stg_prefix)
     if df.empty:
-        logging.info("No data found for customer %s.", customer.name)
+        logging.info("No data found for customer %s.", customer.config.name)
         return
 
     editor = DataEditor(df=df, customer=customer)
@@ -77,24 +80,24 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
 
     builder = DataBuilder(customer)
-    if customer.file_format.lower() == "csv":
-        data = builder.build_csv(df_final, encoding=customer.file_encoding)
-        blob_name = f"tapahtumat_{customer.name}_{ts}.csv"
+    if customer.config.file_format.lower() == "csv":
+        data = builder.build_csv(df_final, encoding=customer.config.file_encoding)
+        blob_name = f"tapahtumat_{customer.config.name}_{ts}.csv"
         content_settings = ContentSettings(
-            content_type=f"text/csv; charset={customer.file_encoding}"
+            content_type=f"text/csv; charset={customer.config.file_encoding}"
         )
-    elif customer.file_format.lower() == "json":
+    elif customer.config.file_format.lower() == "json":
         data = builder.build_json(df_final)
-        blob_name = f"tapahtumat_{customer.name}_{ts}.json"
+        blob_name = f"tapahtumat_{customer.config.name}_{ts}.json"
         content_settings = ContentSettings(
-            content_type=f"application/octet-stream; charset={customer.file_encoding}"
+            content_type=f"application/octet-stream; charset={customer.config.file_encoding}"
         )
     else:
-        raise ValueError(f"Invalid file format: {customer.file_format}")
+        raise ValueError(f"Invalid file format: {customer.config.file_format}")
 
-    dst_stg = StorageHandler(customer.destination_container, verify_existence=True)
+    dst_stg = StorageHandler(customer.config.destination_container, verify_existence=True)
     dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
-    logging.info("Processed customer %s successfully.", customer.name)
+    logging.info("Processed customer %s successfully.", customer.config.name)
 
 
 def main() -> None:
@@ -121,7 +124,9 @@ def main() -> None:
                 process_customer(customer, src_stg)
             except ValueError as err:
                 logging.error(
-                    "Error processing customer %s: %s", customer.name, err
+                    "Error processing customer %s: %s",
+                    customer.config.name,
+                    err,
                 )
 
         elapsed_time = time.perf_counter() - start_time

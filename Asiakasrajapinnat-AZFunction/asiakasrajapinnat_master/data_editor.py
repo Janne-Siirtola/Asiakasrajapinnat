@@ -15,11 +15,11 @@ class DataEditor:
 
         self.target_row_count = len(self.df) - 1
 
-        self.rename_map = customer.rename_map
-        self.dtype_map = customer.dtype_map
-        self.decimals_map = customer.decimals_map
-        self.combined_columns = customer.combined_columns
-        self.allowed_columns = customer.allowed_columns
+        self.rename_map = customer.mappings.rename_map
+        self.dtype_map = customer.mappings.dtype_map
+        self.decimals_map = customer.mappings.decimals_map
+        self.combined_columns = customer.mappings.combined_columns
+        self.allowed_columns = customer.mappings.allowed_columns
 
         self.total_weight_before = self.df['TAPPaino'].sum()
 
@@ -38,7 +38,7 @@ class DataEditor:
         if col not in self.df.columns:
             raise KeyError(f"Expected konserni-column '{col}' not found")
 
-        allowed = {str(i) for i in self.customer.konserni}
+        allowed = {str(i) for i in self.customer.config.konserni}
         unique_vals = set(self.df[col])
 
         if not unique_vals.issubset(allowed):
@@ -145,13 +145,13 @@ class DataEditor:
 
         if error_logs:
             raise ValueError(
-                "Customer: %s\n%s" % (self.customer.name,
+                "Customer: %s\n%s" % (self.customer.config.name,
                                       "\n".join(error_logs))
             )
 
         if warning_logs:
             logging.warning(
-                "Customer: %s\n%s", self.customer.name, "\n".join(warning_logs)
+                "Customer: %s\n%s", self.customer.config.name, "\n".join(warning_logs)
             )
 
         return self

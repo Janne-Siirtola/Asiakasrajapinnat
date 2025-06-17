@@ -2,49 +2,54 @@
 
 import io
 import logging
+from dataclasses import dataclass, field
 from typing import Dict, Optional, Set, Union
 
 import pandas as pd
 from .storage_handler import StorageHandler
 
 
+@dataclass
+class CustomerConfig:
+    """Configuration values for a single customer."""
+    name: str
+    konserni: Set[int]
+    source_container: str
+    destination_container: str
+    file_format: str
+    file_encoding: str
+    extra_columns: Optional[Dict[str, Dict[str, str]]]
+    enabled: bool
+    base_columns: Dict[str, Dict[str, str]]
+    exclude_columns: Optional[list[str]] = None
+
+
+@dataclass
+class CustomerMappings:
+    """Container for generated column mappings."""
+    rename_map: Dict[str, str] = field(default_factory=dict)
+    dtype_map: Dict[str, str] = field(default_factory=dict)
+    decimals_map: Dict[str, int] = field(default_factory=dict)
+    combined_columns: Dict[str, Dict[str, Union[str, int]]] = field(default_factory=dict)
+    allowed_columns: Dict[str, str] = field(default_factory=dict)
+
+
 class Customer:
     """Configuration data and helpers for an individual customer."""
-    def __init__(
-        self,
-        name: str,
-        konserni: Set[int],
-        source_container: str,
-        destination_container: str,
-        file_format: str,
-        file_encoding: str,
-        extra_columns: Optional[Dict[str, Dict[str, str]]],
-        enabled: bool,
-        base_columns: Dict[str, Dict[str, str]],
-        exclude_columns: Optional[list[str]] = None,
-    ) -> None:
+
+    def __init__(self, config: CustomerConfig) -> None:
         """Store the customer configuration used during processing."""
 
-        self.name = name
-        self.konserni = konserni
-        self.source_container = source_container
-        self.destination_container = destination_container
-        self.file_format = file_format
-        self.file_encoding = file_encoding
-        self.extra_columns = extra_columns
-        self.enabled = enabled
+        self.config = config
 
-        self.base_columns = base_columns
-        self.exclude_columns = exclude_columns if exclude_columns else []
+        self.base_columns = config.base_columns.copy()
+        self.exclude_columns = config.exclude_columns or []
 
         if self.exclude_columns:
             for c in self.exclude_columns:
                 self.base_columns.pop(c)
 
-        self.rename_map: Dict[str, str] = {}
-        self.dtype_map: Dict[str, str] = {}
-        self.decimals_map: Dict[str, int] = {}
-        self.combined_columns: Dict[str, Dict[str, Union[str, int]]] = {}
+        self.mappings = CustomerMappings()
 
         self.generate_combined_columns()
         self.generate_data_maps()
@@ -95,16 +100,17 @@ class Customer:
         base_columns and extra_columns.
         :return: Dictionary of allowed columns.
         """
+        extra = self.config.extra_columns or {}
         for key, value in self.base_columns.items():
-            if key not in self.extra_columns:
-                self.combined_columns[key] = value
+            if key not in extra:
+                self.mappings.combined_columns[key] = value
             else:
                 print(
                     f"Duplicate key '{key}' found in base_columns, skipping.")
 
-        for key, value in self.extra_columns.items():
-            if key not in self.combined_columns:
-                self.combined_columns[key] = value
+        for key, value in extra.items():
+            if key not in self.mappings.combined_columns:
+                self.mappings.combined_columns[key] = value
             else:
                 print(
                     f"Duplicate key '{key}' found in extra_columns, skipping.")
@@ -112,16 +118,20 @@ class Customer:
     def generate_data_maps(self) -> None:
         """Create rename, dtype and decimals mappings for processing."""
         # 1) rename mapping: old_key → new_name
-        self.rename_map = {old: cfg["name"]
-                           for old, cfg in self.combined_columns.items()}
+        self.mappings.rename_map = {
+            old: cfg["name"] for old, cfg in self.mappings.combined_columns.items()
+        }
 
         # 2) dtype mapping: new_name → dtype
-        self.dtype_map = {cfg["name"]: cfg["dtype"]
-                          for cfg in self.combined_columns.values()}
+        self.mappings.dtype_map = {
+            cfg["name"]: cfg["dtype"] for cfg in self.mappings.combined_columns.values()
+        }
 
         # 3) decimals mapping (only those that specify decimals)
-        self.decimals_map = {cfg["name"]: cfg["decimals"]
-                             for cfg in self.combined_columns.values()
-                             if "decimals" in cfg}
+        self.mappings.decimals_map = {
+            cfg["name"]: cfg["decimals"]
+            for cfg in self.mappings.combined_columns.values()
+            if "decimals" in cfg
+        }
 
-        self.allowed_columns = self.rename_map.copy()
+        self.mappings.allowed_columns = self.mappings.rename_map.copy()
