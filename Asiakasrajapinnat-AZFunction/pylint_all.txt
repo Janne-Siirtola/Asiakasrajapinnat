@@ -1,7 +1,5 @@
 ************* Module asiakasrajapinnat_master.customer
-asiakasrajapinnat_master\customer.py:11:0: R0902: Too many instance attributes (15/7) (too-many-instance-attributes)
-asiakasrajapinnat_master\customer.py:13:4: R0913: Too many arguments (11/5) (too-many-arguments)
-asiakasrajapinnat_master\customer.py:13:4: R0917: Too many positional arguments (11/5) (too-many-positional-arguments)
+asiakasrajapinnat_master\customer.py:13:0: R0902: Too many instance attributes (10/7) (too-many-instance-attributes)
 ************* Module asiakasrajapinnat_master.data_editor
 asiakasrajapinnat_master\data_editor.py:9:0: R0902: Too many instance attributes (9/7) (too-many-instance-attributes)
 ************* Module asiakasrajapinnat_master.main_config
@@ -11,5 +9,5 @@ config_page\__init__.py:330:0: R0914: Too many local variables (16/15) (too-many
 config_page\__init__.py:385:0: R0912: Too many branches (14/12) (too-many-branches)
 
 ------------------------------------------------------------------
-Your code has been rated at 9.87/10 (previous run: 9.84/10, +0.04)
+Your code has been rated at 9.91/10 (previous run: 9.87/10, +0.04)
 

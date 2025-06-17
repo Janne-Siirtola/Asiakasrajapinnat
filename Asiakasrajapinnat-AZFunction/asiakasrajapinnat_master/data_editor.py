@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 
 from .customer import Customer
+from .editor_mappings import EditorMappings
 
 
 class DataEditor:
@@ -15,11 +16,13 @@ class DataEditor:
 
         self.target_row_count = len(self.df) - 1
 
-        self.rename_map = customer.mappings.rename_map
-        self.dtype_map = customer.mappings.dtype_map
-        self.decimals_map = customer.mappings.decimals_map
-        self.combined_columns = customer.mappings.combined_columns
-        self.allowed_columns = customer.mappings.allowed_columns
+        self.mappings = EditorMappings(
+            rename_map=customer.mappings.rename_map,
+            dtype_map=customer.mappings.dtype_map,
+            decimals_map=customer.mappings.decimals_map,
+            combined_columns=customer.mappings.combined_columns,
+            allowed_columns=customer.mappings.allowed_columns,
+        )
 
         self.total_weight_before = self.df['TAPPaino'].sum()
 
@@ -51,7 +54,7 @@ class DataEditor:
 
     def drop_unmapped_columns(self) -> "DataEditor":
         """Remove columns that are not defined in the mapping."""
-        to_drop = set(self.df.columns) - set(self.allowed_columns.keys())
+        to_drop = set(self.df.columns) - set(self.mappings.allowed_columns.keys())
 
         self.df = self.df.drop(columns=to_drop)
 
@@ -62,7 +65,7 @@ class DataEditor:
 
     def reorder_columns(self) -> "DataEditor":
         """Order columns according to the allowed mapping."""
-        ordered = [c for c in self.allowed_columns.keys()
+        ordered = [c for c in self.mappings.allowed_columns.keys()
                    if c in self.df.columns]
         self.df = self.df[ordered]
         return self
@@ -72,12 +75,12 @@ class DataEditor:
         Cast the DataFrame columns to their specified types and round them if necessary.
         """
         # 1) rename
-        self.df = self.df.rename(columns=self.rename_map)
+        self.df = self.df.rename(columns=self.mappings.rename_map)
 
         # 2) cast datatypes
         valid_dtypes = {
             col: dt
-            for col, dt in self.dtype_map.items()
+            for col, dt in self.mappings.dtype_map.items()
             if col in self.df.columns
         }
 
@@ -102,7 +105,7 @@ class DataEditor:
         error_logs = []
 
         # Check for missing columns
-        missing = [col for col in self.allowed_columns.values()
+        missing = [col for col in self.mappings.allowed_columns.values()
                    if col not in self.df.columns]
         if missing:
             warning_logs.append(
@@ -119,7 +122,7 @@ class DataEditor:
             error_logs.append("DataFrame is empty after processing")
 
         # Check for extra columns
-        extras = set(self.df.columns) - set(self.allowed_columns.values())
+        extras = set(self.df.columns) - set(self.mappings.allowed_columns.values())
         if extras:
             error_logs.append(
                 f"Unexpected extra columns in final DataFrame: {sorted(extras)}")
