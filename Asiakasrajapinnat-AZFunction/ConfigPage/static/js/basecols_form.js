@@ -1,4 +1,5 @@
 (function () {
+  // Client side logic for editing the list of base columns
   const template  = document.getElementById('baseColumnTemplate');
   const container = document.getElementById('baseColumnsContainer');
   const addBtn    = document.getElementById('addBaseColumnBtn');

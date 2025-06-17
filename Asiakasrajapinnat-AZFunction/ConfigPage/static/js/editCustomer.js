@@ -1,4 +1,5 @@
 (function () {
+  // Client side behaviour for editing an existing customer
   const customers   = JSON.parse(
     document.getElementById("customersData").textContent
   );

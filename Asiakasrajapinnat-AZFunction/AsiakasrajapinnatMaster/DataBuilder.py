@@ -1,3 +1,5 @@
+"""Helpers for building output files for each customer."""
+
 import json
 import numpy as np
 import pandas as pd
@@ -13,6 +15,7 @@ class DataBuilder:
         self.decimals_map = customer.decimals_map
 
     def fmt_time(self, t):
+        """Format time values to HH:MM or return ``None`` if empty."""
         if pd.isna(t) or str(t).lower() == "nan":
             return None
         s = str(t)
@@ -21,6 +24,7 @@ class DataBuilder:
         return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
 
     def format_date_and_time(self, df):
+        """Normalize ``Pvm`` and ``Kello`` columns to ISO formats."""
         df["Pvm"] = (
             pd.to_datetime(df["Pvm"], dayfirst=True)
             .dt.strftime("%Y-%m-%d")
@@ -29,6 +33,7 @@ class DataBuilder:
         return df
 
     def format_row(self, row):
+        """Convert a pandas row to compact JSON without extra spaces."""
         parts = []
         for col, val in row.items():
             # key as JSON string
@@ -44,6 +49,7 @@ class DataBuilder:
         return "{" + ",".join(parts) + "}"
 
     def build_json(self, df_final) -> str:
+        """Return the dataframe as a JSON string."""
         # — format dates to ISO
         df_final = self.format_date_and_time(df_final)
 
@@ -61,6 +67,7 @@ class DataBuilder:
         return json_data
 
     def build_csv(self, df_final, encoding) -> str:
+        """Return the dataframe in CSV format using the given encoding."""
         # — format dates to ISO
         df_final = self.format_date_and_time(df_final)
 

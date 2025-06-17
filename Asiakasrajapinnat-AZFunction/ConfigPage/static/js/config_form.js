@@ -1,3 +1,4 @@
+// Script for updating exclude column count in the customer form
 document.addEventListener('DOMContentLoaded', () => {
   const list     = document.getElementById('excludeList');
   const countEl  = document.getElementById('excludeCount');

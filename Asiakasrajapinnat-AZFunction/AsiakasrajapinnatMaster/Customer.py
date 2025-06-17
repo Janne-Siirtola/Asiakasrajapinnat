@@ -1,3 +1,5 @@
+"""Customer configuration model and data helpers."""
+
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 import json
@@ -26,6 +28,7 @@ class Customer:
         base_columns: Dict[str, Dict[str, str]],
         exclude_columns: Optional[list[str]] = None,
     ) -> None:
+        """Store the customer configuration used during processing."""
 
         self.name = name
         self.konserni = konserni
@@ -52,6 +55,7 @@ class Customer:
         self.generate_data_maps()
 
     def get_data(self, stg: StorageHandler, stg_prefix: Optional[str] = None) -> pd.DataFrame:
+        """Load the newest CSV file from the customer's source container."""
         # 0) normalize and build our two “directories”
         prefix = stg_prefix.rstrip('/') + '/'
         history_dir = prefix + 'history/'
@@ -107,6 +111,7 @@ class Customer:
                     f"Duplicate key '{key}' found in extra_columns, skipping.")
 
     def generate_data_maps(self) -> None:
+        """Create rename, dtype and decimals mappings for processing."""
         # 1) rename mapping: old_key → new_name
         self.rename_map = {old: cfg["name"]
                            for old, cfg in self.combined_columns.items()}

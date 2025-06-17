@@ -1,3 +1,5 @@
+"""Simple wrapper around Azure Blob Storage operations."""
+
 from azure.storage.blob import BlobServiceClient, ContainerClient, BlobClient, ContentSettings
 from typing import List, Optional
 import os
@@ -5,6 +7,7 @@ import logging
 
 
 class StorageHandler:
+    """Utility wrapper for interacting with a single blob container."""
     def __init__(self, container_name: str, verify_existence: bool = False) -> None:
         """Initialize the StorageHandler with the specified container name.
 
@@ -54,10 +57,12 @@ class StorageHandler:
         return [b.name for b in blobs]
 
     def list_csv_blobs(self, prefix: Optional[str] = None) -> List[str]:
+        """List CSV blobs under the optional prefix."""
         blobs = self.container_client.list_blobs(name_starts_with=prefix)
         return [b.name for b in blobs if b.name.lower().endswith(".csv")]
 
     def list_json_blobs(self, prefix: Optional[str] = None) -> List[str]:
+        """List JSON blobs under the optional prefix."""
         blobs = self.container_client.list_blobs(name_starts_with=prefix)
         return [b.name for b in blobs if b.name.lower().endswith(".json")]
 

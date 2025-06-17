@@ -1,3 +1,4 @@
+// Allows closing flash message banners on click
 document.addEventListener('DOMContentLoaded', () => {
 // event-delegate on the container for future flashes too
 document.getElementById('flash-container')?.addEventListener('click', e => {

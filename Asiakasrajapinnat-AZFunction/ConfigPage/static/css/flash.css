@@ -1,3 +1,4 @@
+/* Flash message styling used for success and error banners */
 .flash {
   position: relative;           /* make it the positioning context */
   padding: 10px 40px 10px 10px; /* extra right‑padding for the button */

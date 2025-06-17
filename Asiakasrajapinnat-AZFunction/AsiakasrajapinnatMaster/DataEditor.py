@@ -1,6 +1,7 @@
+"""Data cleaning and validation helpers for customer exports."""
+
 import json
 from typing import Dict, Union
-# from azure.storage.blob import BlobServiceClient
 import numpy as np
 import pandas as pd
 import logging
@@ -25,6 +26,7 @@ class DataEditor:
         
 
     def delete_row(self, idx: int) -> "DataEditor":
+        """Remove a row by index from the working DataFrame."""
         self.df = self.df.drop(idx).reset_index(drop=True)
         return self
 
@@ -50,6 +52,7 @@ class DataEditor:
         return self
 
     def drop_unmapped_columns(self) -> "DataEditor":
+        """Remove columns that are not defined in the mapping."""
         to_drop = set(self.df.columns) - set(self.allowed_columns.keys())
 
         self.df = self.df.drop(columns=to_drop)
@@ -60,6 +63,7 @@ class DataEditor:
         return self
 
     def reorder_columns(self) -> "DataEditor":
+        """Order columns according to the allowed mapping."""
         ordered = [c for c in self.allowed_columns.keys()
                    if c in self.df.columns]
         self.df = self.df[ordered]
