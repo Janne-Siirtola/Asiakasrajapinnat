@@ -1,29 +1,27 @@
 """Data cleaning and validation helpers for customer exports."""
 
-import json
-from typing import Dict, Union
-import numpy as np
-import pandas as pd
 import logging
+import pandas as pd
 
-from .Customer import Customer
+from .customer import Customer
+
 
 class DataEditor:
+    """Utility class for cleaning and validating exported data."""
+
     def __init__(self, df: pd.DataFrame, customer: Customer):
         self.df = df.copy()
         self.customer = customer
 
         self.target_row_count = len(self.df) - 1
-        
+
         self.rename_map = customer.rename_map
         self.dtype_map = customer.dtype_map
         self.decimals_map = customer.decimals_map
         self.combined_columns = customer.combined_columns
         self.allowed_columns = customer.allowed_columns
 
-
-        self.weight_column = self.df['TAPPaino']
-        
+        self.total_weight_before = self.df['TAPPaino'].sum()
 
     def delete_row(self, idx: int) -> "DataEditor":
         """Remove a row by index from the working DataFrame."""
@@ -58,7 +56,7 @@ class DataEditor:
         self.df = self.df.drop(columns=to_drop)
 
         if to_drop:
-            logging.info(f"Dropping unmapped columns: {to_drop}")
+            logging.info("Dropping unmapped columns: %s", to_drop)
 
         return self
 
@@ -82,7 +80,7 @@ class DataEditor:
             for col, dt in self.dtype_map.items()
             if col in self.df.columns
         }
-        
+
         for col, dt in valid_dtypes.items():
             if col not in self.df.columns:
                 continue
@@ -93,7 +91,7 @@ class DataEditor:
                 # normalize decimal separator
                 series = series.astype(str).str.replace(',', '.', regex=False)
                 self.df[col] = series.astype(float)
-                
+
         return self
 
     def validate_final_df(self) -> "DataEditor":
@@ -108,14 +106,18 @@ class DataEditor:
                    if col not in self.df.columns]
         if missing:
             warning_logs.append(
-                f"These allowed columns were not found in the DataFrame: {missing}"
+                f"These base columns were not found in the DataFrame: {missing}"
             )
-        """ if not self.weight_column.equals(self.df['Paino']):
-            error_logs.append("Values in column 'Paino' do not match the original values.") """
-            
+
+        if self.total_weight_before != self.df['TAPPaino'].sum():
+            error_logs.append(
+                f"Total weight mismatch: before {self.total_weight_before}, "
+                f"after {self.df['TAPPaino'].sum()}"
+            )
+
         if self.df.empty:
             error_logs.append("DataFrame is empty after processing")
-            
+
         # Check for extra columns
         extras = set(self.df.columns) - set(self.allowed_columns.values())
         if extras:
@@ -142,10 +144,14 @@ class DataEditor:
                 "DataFrame index is not a simple RangeIndex 0…n-1")
 
         if error_logs:
-            raise ValueError(f"Customer: {self.customer.name},\n" + "\n".join(error_logs))
+            raise ValueError(
+                "Customer: %s\n%s" % (self.customer.name,
+                                      "\n".join(error_logs))
+            )
 
         if warning_logs:
-            logging.warning(f"Customer: {self.customer.name},\n" + "\n".join(warning_logs))
-        
-        return self
+            logging.warning(
+                "Customer: %s\n%s", self.customer.name, "\n".join(warning_logs)
+            )
 
+        return self

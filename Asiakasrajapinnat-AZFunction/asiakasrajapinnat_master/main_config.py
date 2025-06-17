@@ -1,10 +1,8 @@
 
 """Load the global configuration used by the timer function."""
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict
 import json
+
 from .storage_handler import StorageHandler
 
 

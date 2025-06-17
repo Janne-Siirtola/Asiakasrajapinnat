@@ -1,18 +1,19 @@
 """HTTP endpoint serving the configuration UI and form processing."""
 
-import logging
-import traceback
-import os
 import json
+import logging
+import os
+import traceback
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import parse_qs
 
 import azure.functions as func
+from azure.core.exceptions import AzureError
 from azure.storage.blob import ContentSettings
-from urllib.parse import parse_qs
+from jinja2 import Environment, FileSystemLoader, TemplateError, select_autoescape
 
 from asiakasrajapinnat_master.storage_handler import StorageHandler
 from asiakasrajapinnat_master.main_config import MainConfig
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # version 1.21
 src_stg = StorageHandler(container_name="vitecpowerbi")
@@ -46,26 +47,22 @@ def flash(category: str = "error", message: str = "") -> None:
     })
 
 
-def render_template(
-    template_name: str,
-    method: str,
-    status_code: int = 200,
-    mimetype: str = "text/html",
-    css_blocks: List[str] = None,
-    js_blocks: List[str] = None,
-    html_blocks: List[Dict[str, str]] = None,
-    customers: List = None,
-    messages: List[Dict[str, str]] = None,
-    base_columns: Dict[str, Dict[str, str]] = None
-) -> func.HttpResponse:
-    """Render a Jinja2 template and wrap it into an HTTP response."""
-    if not messages:
-        messages = flash_messages
+def render_template(context: Dict[str, Any]) -> func.HttpResponse:
+    """Render a Jinja2 template using values from ``context``."""
+
+    template_name = context.get("template_name", "")
+    status_code = context.get("status_code", 200)
+    mimetype = context.get("mimetype", "text/html")
+
+    render_args = context.copy()
+    messages = render_args.get("messages") or flash_messages
+    render_args["messages"] = messages
+    render_args.pop("template_name", None)
+    render_args.pop("status_code", None)
+    render_args.pop("mimetype", None)
 
     template = jinja_env.get_template(template_name)
-    rendered = template.render(messages=messages, method=method, css_blocks=css_blocks,
-                               js_blocks=js_blocks, html_blocks=html_blocks, customers=customers,
-                               base_columns=base_columns)
+    rendered = template.render(**render_args)
     return func.HttpResponse(rendered, status_code=status_code, mimetype=mimetype)
 
 
@@ -80,7 +77,7 @@ def get_css_blocks(file_specific_styles: Optional[List[str]] = None) -> List[str
     for css_file in global_styles:
         css_path = os.path.join(css_dir, css_file)
         if os.path.exists(css_path):
-            with open(css_path, 'r') as f:
+            with open(css_path, 'r', encoding='utf-8') as f:
                 css_blocks.append(f.read())
 
     # Add file-specific styles if provided
@@ -88,7 +85,7 @@ def get_css_blocks(file_specific_styles: Optional[List[str]] = None) -> List[str
         for css_file in file_specific_styles:
             css_path = os.path.join(css_dir, css_file)
             if os.path.exists(css_path):
-                with open(css_path, 'r') as f:
+                with open(css_path, 'r', encoding='utf-8') as f:
                     css_blocks.append(f.read())
 
     return css_blocks
@@ -105,7 +102,7 @@ def get_js_blocks(file_specific_scripts: Optional[List[str]] = None) -> List[str
     for js_file in global_scripts:
         js_path = os.path.join(js_dir, js_file)
         if os.path.exists(js_path):
-            with open(js_path, 'r') as f:
+            with open(js_path, 'r', encoding='utf-8') as f:
                 js_blocks.append(f.read())
 
     # Add file-specific scripts if provided
@@ -113,7 +110,7 @@ def get_js_blocks(file_specific_scripts: Optional[List[str]] = None) -> List[str
         for js_file in file_specific_scripts:
             js_path = os.path.join(js_dir, js_file)
             if os.path.exists(js_path):
-                with open(js_path, 'r') as f:
+                with open(js_path, 'r', encoding='utf-8') as f:
                     js_blocks.append(f.read())
 
     return js_blocks
@@ -130,7 +127,7 @@ def get_html_blocks(file_specific_html: Optional[List[str]] = None) -> List[Dict
     for html_file in global_html:
         html_path = os.path.join(templates_dir, html_file)
         if os.path.exists(html_path):
-            with open(html_path, 'r') as f:
+            with open(html_path, 'r', encoding='utf-8') as f:
                 html_blocks.append({
                     "name": html_file,
                     "content": f.read()
@@ -141,7 +138,7 @@ def get_html_blocks(file_specific_html: Optional[List[str]] = None) -> List[Dict
         for html_file in file_specific_html:
             html_path = os.path.join(templates_dir, html_file)
             if os.path.exists(html_path):
-                with open(html_path, 'r') as f:
+                with open(html_path, 'r', encoding='utf-8') as f:
                     html_blocks.append({
                         "name": html_file,
                         "content": f.read()
@@ -165,11 +162,16 @@ def create_containers(src_container: str, dest_container: str):
             src_stg.container_client.delete_blob(marker)
         except Exception as e:
             # if something goes wrong it’s non‐fatal—just log it
-            logging.error(f"Could not create directory marker {marker}: {e}")
+            logging.error(
+                "Could not create directory marker %s: %s",
+                marker,
+                e,
+            )
     else:
         src_container = src_container.strip("/")  # Ensure no trailing slash
         flash(
-            "error", f"Source container '{src_container}' already exists. Please choose a different name.")
+            "error", f"Source container '{src_container}' "
+            "already exists. Please choose a different name.")
 
     # Create destination container
     dst_stg = StorageHandler(container_name=dest_container)
@@ -177,14 +179,21 @@ def create_containers(src_container: str, dest_container: str):
     if dst_stg.container_exists():
         dest_container = dest_container.strip("/")  # Ensure no trailing slash
         flash(
-            "error", f"Destination container '{dest_container}' already exists. Please choose a different name.")
+            "error", f"Destination container '{dest_container}' already exists. "
+            "Please choose a different name.")
     else:
         try:
             dst_stg.create_container()
-            logging.info(f"Destination container '{dest_container}' created.")
+            logging.info(
+                "Destination container '%s' created.",
+                dest_container,
+            )
         except Exception as e:
             flash("error", f"Failed to create destination container: {e}")
-            logging.error(f"Failed to create destination container: {e}")
+            logging.error(
+                "Failed to create destination container: %s",
+                e,
+            )
 
 
 def get_customers() -> List[str]:
@@ -199,18 +208,27 @@ def get_customers() -> List[str]:
                 # Optionally, you can add the blob name or key so you know which is which:
                 # e.g. data["_blob_name"] = cfg_file
                 customers.append(data)
-            except Exception as e:
+            except (AzureError, json.JSONDecodeError) as e:
                 logging.error(
-                    f"Failed to parse JSON from blob '{cfg_file}': {e}")
+                    "Failed to parse JSON from blob '%s': %s",
+                    cfg_file,
+                    e,
+                )
                 continue
-    except Exception as e:
-        logging.error(f"Failed to list blobs under CustomerConfig/: {e}")
+    except AzureError as e:
+        logging.error("Failed to list blobs under CustomerConfig/: %s", e)
 
     return customers
 
 
-def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = flash_messages) -> Dict[str, any]:
+def prepare_template_context(
+    method: str = "",
+    messages: Optional[List[Dict[str, str]]] = None,
+) -> Dict[str, Any]:
     """Collect template data for rendering HTML pages."""
+
+    if messages is None:
+        messages = flash_messages
 
     template_name = "customer_config_form.html"
 
@@ -249,6 +267,66 @@ def prepare_template_context(method: str = "", messages: List[Dict[str, str]] = 
     }
 
 
+def _parse_base_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, Any]]:
+    """Extract base column configuration from parsed form data."""
+
+    keys = parsed.get("key", [])
+    names = parsed.get("name", [])
+    dtypes = parsed.get("dtype", [])
+    decimals = parsed.get("decimals", [])
+
+    basecols: Dict[str, Dict[str, Any]] = {}
+    for k, n, dt, dec in zip(keys, names, dtypes, decimals):
+        k = k.strip()
+        if not k:
+            continue
+        col = {"name": n.strip(), "dtype": dt.strip()}
+        if dt.strip() == "float" and dec.strip():
+            try:
+                col["decimals"] = int(dec)
+            except ValueError:
+                flash(
+                    "error",
+                    f"Invalid decimal value for column '{k}': {dec.strip()}",
+                )
+        basecols[k] = col
+
+    return basecols
+
+
+def _parse_konserni_list(raw_value: str) -> List[int]:
+    """Parse a comma separated list of konserni ids."""
+
+    konserni_list: List[int] = []
+    for part in filter(None, [p.strip() for p in raw_value.split(",")]):
+        try:
+            konserni_list.append(int(part))
+        except ValueError:
+            logging.warning("Ignoring non-numeric konserni token: '%s'", part)
+            flash(
+                "error",
+                f"Invalid konserni value: '{part}'. Please enter numeric values only.",
+            )
+
+    return konserni_list
+
+
+def _parse_extra_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, str]]:
+    """Extract extra column configuration from parsed form data."""
+
+    extra_keys = parsed.get("extra_key", [])
+    extra_names = parsed.get("extra_name", [])
+    extra_dtypes = parsed.get("extra_dtype", [])
+
+    extra_columns: Dict[str, Dict[str, str]] = {}
+    for key, disp, dt in zip(extra_keys, extra_names, extra_dtypes):
+        key = key.strip()
+        if key:
+            extra_columns[key] = {"name": disp.strip(), "dtype": dt.strip()}
+
+    return extra_columns
+
+
 def parse_form_data(body: str) -> Tuple[str, Any]:
     """Parse POSTed form data and return method and configuration."""
 
@@ -256,24 +334,9 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
 
     method = parsed.get("method", [""])[0].strip().lower()
     if method == "edit_basecols":
-        keys = parsed.get("key", [])
-        names = parsed.get("name", [])
-        dtypes = parsed.get("dtype", [])
-        decimals = parsed.get("decimals", [])
-        basecols: Dict[str, Dict[str, Any]] = {}
-        for k, n, dt, dec in zip(keys, names, dtypes, decimals):
-            k = k.strip()
-            if not k:
-                continue
-            col = {"name": n.strip(), "dtype": dt.strip()}
-            if dt.strip() == "float" and dec.strip():
-                try:
-                    col["decimals"] = int(dec)
-                except ValueError:
-                    flash(
-                        "error", f"Invalid decimal value for column '{k}': {dec.strip()}")
-            basecols[k] = col
+        basecols = _parse_base_columns(parsed)
         return method, basecols
+
     if method not in ["create_customer", "edit_customer"]:
         raise ValueError("Invalid method")
 
@@ -286,15 +349,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     name = parsed.get("name", [""])[0].strip().lower()
 
     konserni_raw = parsed.get("konserni", [""])[0].strip()
-    konserni_list = []
-    for part in filter(None, [p.strip() for p in konserni_raw.split(",")]):
-        try:
-            konserni_list.append(int(part))
-        except ValueError:
-            logging.warning(f"Ignoring non-numeric konserni token: '{part}'")
-            flash(
-                "error", f"Invalid konserni value: '{part}'. Please enter numeric values only."
-            )
+    konserni_list = _parse_konserni_list(konserni_raw)
 
     src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
     dest_container = parsed.get("dest_container", [""])[
@@ -302,14 +357,7 @@ def parse_form_data(body: str) -> Tuple[str, Any]:
     file_format = parsed.get("file_format", [""])[0].strip().lower()
     file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
 
-    extra_keys = parsed.get("extra_key", [])
-    extra_names = parsed.get("extra_name", [])
-    extra_dtypes = parsed.get("extra_dtype", [])
-    extra_columns: Dict[str, Dict[str, str]] = {}
-    for key, disp, dt in zip(extra_keys, extra_names, extra_dtypes):
-        key = key.strip()
-        if key:
-            extra_columns[key] = {"name": disp.strip(), "dtype": dt.strip()}
+    extra_columns = _parse_extra_columns(parsed)
 
     exclude_list = parsed.get("exclude_columns", [])
 
@@ -347,9 +395,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             method = req.params.get("method", "").strip()
 
             context = prepare_template_context(method=method, messages=[])
-            return render_template(**context)
-        except Exception as e:
-            logging.error(f"Error rendering template: {e}")
+            return render_template(context)
+        except (TemplateError, AzureError) as e:
+            logging.error("Error rendering template: %s", e)
             return func.HttpResponse(
                 json.dumps({"error_in_get": str(traceback.format_exc())}),
                 status_code=500,
@@ -364,8 +412,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 method, result = parse_form_data(raw_body)
                 name = result["name"] if isinstance(
                     result, dict) and "name" in result else ""
-            except Exception as e:
-                logging.error(f"Failed to parse POST body: {e}")
+            except (ValueError, json.JSONDecodeError, AzureError) as e:
+                logging.error("Failed to parse POST body: %s", e)
                 return func.HttpResponse(
                     json.dumps({"error": str(e)}),
                     status_code=400,
@@ -384,21 +432,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     content_settings=ContentSettings(
                         content_type="application/json; charset=utf-8")
                 )
-            elif method == "create_customer":
+            json_blob_exists = False
+            if method == "create_customer":
                 json_blob_exists = conf_stg.list_json_blobs(
                     prefix=f"CustomerConfig/{name}")
-            else:
-                json_blob_exists = False  # Skip check for edit, as we assume the blob exists if editing
             if method in ["create_customer", "edit_customer"]:
                 # If the blob already exists, raise an error (skip check for edit)
                 if json_blob_exists and method == "create_customer":
                     logging.error(
-                        f"Configuration for customer '{name}' already exists.")
+                        "Configuration for customer '%s' already exists.",
+                        name,
+                    )
                     flash(
-                        "error", f"Configuration for customer '{name}' already exists. Please choose a different name.")
+                        "error", f"Configuration for customer '{name}' already exists. "
+                        "Please choose a different name.")
                 else:  # If it does not exist, upload the new configuration
                     logging.info(
-                        f"Uploading configuration for customer '{name}'")
+                        "Uploading configuration for customer '%s'",
+                        name,
+                    )
                     conf_stg.upload_blob(
                         blob_name=f"CustomerConfig/{name}.json",
                         data=json.dumps(
@@ -420,17 +472,17 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 flash("success", "Base columns updated successfully.")
 
             # DEBUG: Return the result as JSON for debugging purposes
-            """ return func.HttpResponse(
-                json.dumps(result, ensure_ascii=False),
-                status_code=200,
-                mimetype="application/json"
-            ) """
+            # return func.HttpResponse(
+            #     json.dumps(result, ensure_ascii=False),
+            #     status_code=200,
+            #     mimetype="application/json"
+            # )
 
             # Redirect to the index page after processing
             context = prepare_template_context()
-            return render_template(**context)
-        except Exception as e:
-            logging.error(f"Error processing POST request: {e}")
+            return render_template(context)
+        except (AzureError, TemplateError, ValueError) as e:
+            logging.error("Error processing POST request: %s", e)
             return func.HttpResponse(
                 json.dumps({"error_in_post": str(traceback.format_exc())}),
                 status_code=500,

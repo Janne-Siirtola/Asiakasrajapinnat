@@ -1,9 +1,14 @@
 """Simple wrapper around Azure Blob Storage operations."""
 
-from azure.storage.blob import BlobServiceClient, ContainerClient, BlobClient, ContentSettings
-from typing import List, Optional
-import os
 import logging
+import os
+from typing import List, Optional
+from azure.storage.blob import (
+    BlobServiceClient,
+    ContainerClient,
+    BlobClient,
+    ContentSettings,
+)
 
 
 class StorageHandler:
@@ -13,7 +18,8 @@ class StorageHandler:
 
         Args:
             container_name (str): Name of the Azure Blob Storage container.
-            verify_existence (bool, optional): If True, checks if the container exists. Defaults to False.
+            verify_existence (bool, optional):
+                If True, checks if the container exists. Defaults to False.
 
         Raises:
             ValueError: If the container does not exist and verify_existence is True.
@@ -43,9 +49,11 @@ class StorageHandler:
         """
         if not self.container_client.exists():
             self.container_client.create_container()
-            logging.info(f"Container '{self.container_name}' created.")
+            logging.info("Container '%s' created.", self.container_name)
         else:
-            logging.info(f"Container '{self.container_name}' already exists.")
+            logging.info(
+                "Container '%s' already exists.", self.container_name
+            )
 
     def list_blobs(self, prefix: Optional[str] = None) -> List[str]:
         """
@@ -67,14 +75,24 @@ class StorageHandler:
         return [b.name for b in blobs if b.name.lower().endswith(".json")]
 
     def download_blob(self, blob_name: str) -> bytes:
+        """Download the contents of ``blob_name`` and return it."""
         blob_client: BlobClient = self.container_client.get_blob_client(
-            blob_name)
+            blob_name
+        )
         return blob_client.download_blob().readall()
 
-    def upload_blob(self, blob_name: str, data: bytes, overwrite: bool = True, content_settings: Optional[ContentSettings] = None) -> None:
+    def upload_blob(
+        self,
+        blob_name: str,
+        data: bytes,
+        overwrite: bool = True,
+        content_settings: Optional[ContentSettings] = None,
+    ) -> None:
+        """Upload data to ``blob_name`` within this container."""
         blob_client: BlobClient = self.container_client.get_blob_client(
-            blob_name)
-        
+            blob_name
+        )
+
         if content_settings is None:
             blob_client.upload_blob(data, overwrite=overwrite)
         else:
@@ -112,6 +130,11 @@ class StorageHandler:
         # 3) delete the original
         self.container_client.delete_blob(source_blob_name)
         logging.info(
-            f"Moved blob from {self.container_name}/{source_blob_name} to {self.container_name}/{dest_blob_name}")
+            "Moved blob from %s/%s to %s/%s",
+            self.container_name,
+            source_blob_name,
+            self.container_name,
+            dest_blob_name,
+        )
 
         return dest_blob_name

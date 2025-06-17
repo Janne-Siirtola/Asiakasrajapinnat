@@ -1,20 +1,15 @@
 """Customer configuration model and data helpers."""
 
-from dataclasses import dataclass
-from decimal import ROUND_HALF_UP, Decimal
-import json
-from pathlib import Path
-from typing import Optional, Dict, Union, Set
-import os
-# from azure.storage.blob import BlobServiceClient
-import numpy as np
-import pandas as pd
-import logging
 import io
+import logging
+from typing import Dict, Optional, Set, Union
+
+import pandas as pd
 from .storage_handler import StorageHandler
 
 
 class Customer:
+    """Configuration data and helpers for an individual customer."""
     def __init__(
         self,
         name: str,
@@ -77,8 +72,11 @@ class Customer:
         # 3) download it
         data = stg.download_blob(latest.name)
         logging.info(
-            f"Loaded {len(data)} bytes from {stg.container_name}/{latest.name} "
-            f"(last modified: {latest.last_modified})"
+            "Loaded %d bytes from %s/%s (last modified: %s)",
+            len(data),
+            stg.container_name,
+            latest.name,
+            latest.last_modified,
         )
 
         # 4) move it into history
@@ -93,7 +91,8 @@ class Customer:
 
     def generate_combined_columns(self) -> None:
         """
-        Generate a dictionary of allowed columns based on the customer's base_columns and extra_columns.
+        Generate a dictionary of allowed columns based on the customer's
+        base_columns and extra_columns.
         :return: Dictionary of allowed columns.
         """
         for key, value in self.base_columns.items():
