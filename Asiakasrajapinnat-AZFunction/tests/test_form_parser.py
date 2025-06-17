@@ -1,6 +1,16 @@
 import sys
 import os
 
+# Ensure Azure Blob Storage connection string is available during imports.
+# The Azure SDK does not accept the short ``UseDevelopmentStorage=true`` format
+# so we provide a minimal Azurite style string instead.
+os.environ.setdefault(
+    "AzureWebJobsStorage",
+    "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+    "AccountKey=Eby8vdM02xNOcqFeSClZg==;"
+    "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+)
+
 # Ensure package can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Asiakasrajapinnat-AZFunction")))
 
@@ -13,7 +23,7 @@ def test_edit_basecols_parsing(monkeypatch):
         "key=foo&name=Foo&dtype=int&decimals=&"
         "key=bar&name=Bar&dtype=float&decimals=2"
     )
-    method, result = form_parser.parse_form_data(body)
+    method, result = form_parser.parse_form_data(body, [])
     assert method == "edit_basecols"
     assert result == {
         "foo": {"name": "Foo", "dtype": "int"},
@@ -24,7 +34,7 @@ def test_edit_basecols_parsing(monkeypatch):
 def test_create_customer_calls_create_containers(monkeypatch):
     called = {}
 
-    def fake_create(src, dst):
+    def fake_create(src, dst, msgs):
         called["args"] = (src, dst)
 
     monkeypatch.setattr(form_parser, "create_containers", fake_create)
@@ -34,7 +44,7 @@ def test_create_customer_calls_create_containers(monkeypatch):
         "file_format=csv&file_encoding=utf-8&"
         "create_containers_check=true"
     )
-    method, result = form_parser.parse_form_data(body)
+    method, result = form_parser.parse_form_data(body, [])
 
     assert method == "create_customer"
     assert called["args"] == ("src/", "dest/")
