@@ -17,7 +17,7 @@ logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """Azure Function entry point for serving and processing the form."""
-    logging.info("config_page function processed a request.")
+    logging.info("config_page function received a %s request.", req.method)
 
     if req.method == "GET":
         return handle_get(req)

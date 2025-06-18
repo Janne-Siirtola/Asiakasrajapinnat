@@ -21,6 +21,11 @@ def create_containers(
     messages: Optional[List[Dict[str, str]]] = None,
 ) -> None:
     """Create source and destination containers if they do not exist."""
+    logging.info(
+        "Creating containers: src='%s', dest='%s'",
+        src_container,
+        dest_container,
+    )
     if messages is None:
         messages = []
     prefix = f"Rajapinta/{src_container}"
@@ -68,6 +73,7 @@ def create_containers(
 
 def get_customers() -> List[str]:
     """Load customer configuration files from storage."""
+    logging.info("Loading customer configuration files")
     customers: List[str] = []
     try:
         for cfg_file in conf_stg.list_json_blobs("customer_config"):

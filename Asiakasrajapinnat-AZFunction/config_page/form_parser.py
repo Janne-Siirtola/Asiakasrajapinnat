@@ -137,6 +137,7 @@ def parse_form_data(
     parsed = parse_qs(body, keep_blank_values=True)
 
     method = parsed.get("method", [""])[0].strip().lower()
+    logging.info("Form method received: %s", method)
     if method == "edit_base_columns":
         basecols = _parse_base_columns(parsed, messages)
         return method, basecols
@@ -177,5 +178,7 @@ def parse_form_data(
         extra_columns,
         exclude_list,
     )
+
+    logging.info("Parsed data for customer '%s'", name)
 
     return method, result

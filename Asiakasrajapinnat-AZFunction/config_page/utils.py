@@ -4,6 +4,7 @@ import os
 import hmac
 import hashlib
 import secrets
+import logging
 from typing import Any, Dict, List, Optional
 from urllib.parse import unquote
 
@@ -115,6 +116,7 @@ def generate_csrf_token() -> tuple[str, str]:
     """Return a new token and the cookie value to store server-side."""
     token = secrets.token_urlsafe(32)
     signature = _sign(token)
+    logging.info("Generated CSRF token")
     return token, f"{token}|{signature}"
 
 

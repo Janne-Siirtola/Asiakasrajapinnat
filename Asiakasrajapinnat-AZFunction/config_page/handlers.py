@@ -34,6 +34,7 @@ def prepare_template_context(
     csrf_token: str = "",
 ) -> Dict[str, Any]:
     """Collect template data for rendering HTML pages."""
+    logging.info("Preparing template context for method '%s'", method)
     if messages is None:
         messages = []
 
@@ -87,6 +88,7 @@ def handle_error(err: Exception) -> func.HttpResponse:
 def handle_get(req: func.HttpRequest) -> func.HttpResponse:
     """Process a GET request."""
     try:
+        logging.info("Processing GET request")
         method = req.params.get("method", "").strip()
         messages: List[Dict[str, str]] = []
         token, cookie_val = generate_csrf_token()
@@ -96,6 +98,7 @@ def handle_get(req: func.HttpRequest) -> func.HttpResponse:
         context["headers"] = {
             "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
         }
+        logging.info("Returning template %s", context["template_name"])
         return render_template(context)
     except (TemplateError, AzureError) as err:
         return handle_error(err)
@@ -104,6 +107,7 @@ def handle_get(req: func.HttpRequest) -> func.HttpResponse:
 def handle_post(req: func.HttpRequest) -> func.HttpResponse:
     """Process a POST request."""
     try:
+        logging.info("Processing POST request")
         messages: List[Dict[str, str]] = []
         raw_body = req.get_body().decode("utf-8")
         parsed = parse_qs(raw_body, keep_blank_values=True)
@@ -182,23 +186,27 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
 
         error_occurred = any(f["category"] == "error" for f in messages)
 
-        if method == "create_customer" and not error_occurred:
-            flash(messages, "success",
-                  f"Customer '{name}' created successfully.")
-        elif method == "edit_customer" and not error_occurred:
-            flash(messages, "success",
-                  f"Customer '{name}' updated successfully.")
-        elif method == "delete_customer" and not error_occurred:
-            flash(messages, "success",
-                  f"Customer '{result}' deleted successfully.")
-        elif method == "edit_base_columns" and not error_occurred:
-            flash(messages, "success", "Base columns updated successfully.")
+        if not error_occurred:
+            if method == "create_customer":
+                flash(messages, "success",
+                    f"Customer '{name}' created successfully.")
+            elif method == "edit_customer":
+                flash(messages, "success",
+                    f"Customer '{name}' updated successfully.")
+            elif method == "delete_customer":
+                flash(messages, "success",
+                    f"Customer '{result}' deleted successfully.")
+            elif method == "edit_base_columns":
+                flash(messages, "success", "Base columns updated successfully.")
 
         token, cookie_val = generate_csrf_token()
         context = prepare_template_context(messages=messages, csrf_token=token)
         context["headers"] = {
             "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
         }
+        logging.info("POST request processed successfully. Returning template %s",
+            context["template_name"]
+        )
         return render_template(context)
     except (AzureError, TemplateError, ClientError) as err:
         return handle_error(err)
