@@ -40,7 +40,7 @@ jobs:
       - name: Run tests
         run: |
           source venv/bin/activate
-          pip install pytest requests
+          pip install -r requirements.txt
           pytest --maxfail=1 --disable-warnings -q
 
       - name: Zip artifact for deployment
