@@ -85,12 +85,6 @@ def _parse_containers(
     file_format = parsed.get("file_format", [""])[0].strip().lower()
     file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
 
-    if src_container and not is_valid_container_name(src_container):
-        flash(
-            messages,
-            "error",
-            f"Invalid source container name '{src_container}'.",
-        )
     if dest_container and not is_valid_container_name(dest_container):
         flash(
             messages,
