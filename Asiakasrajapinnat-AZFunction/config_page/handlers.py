@@ -15,6 +15,7 @@ from asiakasrajapinnat_master.main_config import load_main_config
 
 from .form_parser import parse_form_data
 from .storage_utils import conf_stg, get_customers
+from .exceptions import ClientError, InvalidInputError
 from .utils import (
     flash,
     get_css_blocks,
@@ -74,10 +75,10 @@ def prepare_template_context(
 
 
 def handle_error(err: Exception) -> func.HttpResponse:
-    """Return a 500 ``HttpResponse`` with the error message."""
-    logging.error("Unexpected error: %s", err)
+    """Return a generic 500 response and log the stack trace."""
+    logging.exception("Unexpected error: %s", err)
     return func.HttpResponse(
-        json.dumps({"error": str(traceback.format_exc())}),
+        json.dumps({"error": "Internal server error"}),
         status_code=500,
         mimetype="application/json",
     )
@@ -124,7 +125,7 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
             method, result = parse_form_data(raw_body, messages)
             name = result["name"] if isinstance(
                 result, dict) and "name" in result else ""
-        except (ValueError, json.JSONDecodeError, AzureError) as err:
+        except (InvalidInputError, json.JSONDecodeError, AzureError) as err:
             logging.error("Failed to parse POST body: %s", err)
             return func.HttpResponse(
                 json.dumps({"error": str(err)}),
@@ -199,5 +200,5 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
             "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
         }
         return render_template(context)
-    except (AzureError, TemplateError, ValueError) as err:
+    except (AzureError, TemplateError, ClientError) as err:
         return handle_error(err)

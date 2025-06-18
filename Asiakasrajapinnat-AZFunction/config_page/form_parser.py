@@ -8,6 +8,7 @@ from urllib.parse import parse_qs
 
 from .storage_utils import create_containers
 from .utils import flash
+from .exceptions import InvalidInputError
 
 
 def is_valid_container_name(name: str) -> bool:
@@ -85,6 +86,9 @@ def _parse_containers(
     file_format = parsed.get("file_format", [""])[0].strip().lower()
     file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
 
+    # Source container validation is unnecessary since it's not a container, 
+    # but a directory within the container.
+    
     if dest_container and not is_valid_container_name(dest_container):
         flash(
             messages,
@@ -142,7 +146,7 @@ def parse_form_data(
         return method, name
 
     if method not in ["create_customer", "edit_customer"]:
-        raise ValueError("Invalid method")
+        raise InvalidInputError("Invalid method")
 
     enabled = _parse_enabled(method, parsed)
     name = parsed.get("name", [""])[0].strip().lower()
