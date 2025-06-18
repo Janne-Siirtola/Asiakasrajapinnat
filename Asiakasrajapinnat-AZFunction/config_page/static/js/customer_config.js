@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cust = customers.find(c => c.name === btn.dataset.name);
     if (!cust) return console.error("Customer not found");
 
-    formTitle.textContent = `Edit Customer: ${cust.name.toUpperCase()}`;
+    formTitle.textContent = `Muokkaa: ${cust.name.toUpperCase()}`;
     fields.name.value            = cust.name;
     fields.konserni.value        = cust.konserni.join(",");
     fields.src_container.value   = (cust.source_container || "").replace("/", "");

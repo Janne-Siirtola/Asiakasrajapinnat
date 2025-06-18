@@ -92,6 +92,7 @@ small {
 fieldset {
   border: 1px solid #cccccc;
   padding: 15px 20px 20px;
+  margin-top: 15px;
   margin-bottom: 20px;
   border-radius: 4px;
   background-color: #fafafa;

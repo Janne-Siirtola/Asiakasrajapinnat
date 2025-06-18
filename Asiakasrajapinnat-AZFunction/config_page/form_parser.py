@@ -41,7 +41,8 @@ def _parse_konserni_list(raw_value: str, messages: List[Dict[str, str]]) -> List
             konserni_list.append(int(part))
         except ValueError:
             logging.warning("Ignoring non-numeric konserni token: '%s'", part)
-            flash(messages, "error", f"Invalid konserni value: '{part}'. Please enter numeric values only.")
+            flash(messages, "error", f"Invalid konserni value: '{part}'. "
+                  "Please enter numeric values only.")
     return konserni_list
 
 
