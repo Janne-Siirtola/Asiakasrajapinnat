@@ -61,8 +61,9 @@
     const dtypeSelect   = group.querySelector('select[name="dtype"]');
     const decimalsGroup = group.querySelector('.decimals-group');
     function toggleDecimals() {
-      decimalsGroup.style.display =
-        dtypeSelect.value === 'float' ? '' : 'none';
+      const show = dtypeSelect.value === 'float';
+      // keep cell width so drag handle lines up regardless of dtype
+      decimalsGroup.style.visibility = show ? 'visible' : 'hidden';
     }
     dtypeSelect.addEventListener('change', toggleDecimals);
     toggleDecimals();

@@ -42,30 +42,33 @@ h1 {
 }
 
 /* ======== Base‑columns rows ======== */
-.base-columns-group {
-  display: flex;
+.base-columns-group,
+.base-columns-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 1fr 100px 40px;
   align-items: center;
+  column-gap: 10px;
+}
+
+.base-columns-group {
   position: relative;
   padding: 5px;
   border: 1px solid #9b9b9b;
   border-radius: 4px;
   background: #f7f7f7;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 .base-columns-group .form-group {
   margin-bottom: 0;
-  margin-right: 10px;
 }
 
 .base-columns-header {
-  display: flex;
-  align-items: center;
   font-weight: 600;
   padding: 0 12px 6px;
   margin-bottom: 4px;
 }
 .base-columns-header span {
-  margin-right: 10px;
+  display: block;
 }
 .base-columns-header .header-spacer {
   width: 80px;
@@ -97,7 +100,6 @@ button:hover {
   background-color: #e81123;
   font-size: 13px;
   padding: 5px 5px;
-  margin-right: 10px;
 }
 .removeColumnBtn:hover {
   background-color: #c50f1f;
@@ -123,7 +125,6 @@ button:hover {
 
 /* drag‑handle styling */
 .drag-handle {
-  margin-left: auto;       /* push to the right */
   cursor: grab;
   font-size: 18px;
   padding: 4px 8px;
