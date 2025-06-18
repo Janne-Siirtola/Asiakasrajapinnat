@@ -162,7 +162,6 @@ def parse_form_data(
             0].strip().lower()
         if (
             check_str == "true"
-            and is_valid_container_name(src_container.strip("/"))
             and is_valid_container_name(dest_container.strip("/"))
         ):
             create_containers(src_container, dest_container, messages)
