@@ -48,8 +48,8 @@ def prepare_template_context(
         js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
     elif method == "edit_base_columns":
         template_name = "edit_base_columns_form.html"
-        css_blocks = get_css_blocks(file_specific_styles=["basecols_form.css"])
-        js_blocks = get_js_blocks(file_specific_scripts=["basecols_form.js"])
+        css_blocks = get_css_blocks(file_specific_styles=["edit_base_columns.css"])
+        js_blocks = get_js_blocks(file_specific_scripts=["edit_base_columns.js"])
     else:
         template_name = "index.html"
         css_blocks = get_css_blocks(file_specific_styles=["index.css"])

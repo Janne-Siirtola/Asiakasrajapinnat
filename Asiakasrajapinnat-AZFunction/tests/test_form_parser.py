@@ -61,3 +61,45 @@ def test_delete_customer_parsing():
     method, result = form_parser.parse_form_data(body, [])
     assert method == "delete_customer"
     assert result == "test"
+
+
+def test_invalid_container_names_are_rejected(monkeypatch):
+    called = {}
+
+    def fake_create(src, dst, msgs):
+        called["called"] = True
+
+    monkeypatch.setattr(form_parser, "create_containers", fake_create)
+    body = (
+        "method=create_customer&name=test&konserni=1&"
+        "src_container=Invalid--Name&dest_container=dest&"
+        "file_format=csv&file_encoding=utf-8&"
+        "create_containers_check=true"
+    )
+    messages = []
+    method, result = form_parser.parse_form_data(body, messages)
+
+    assert method == "create_customer"
+    assert "called" not in called
+    assert any("Invalid source container name" in m["message"] for m in messages)
+
+
+def test_valid_container_names_are_accepted(monkeypatch):
+    called = {}
+
+    def fake_create(src, dst, msgs):
+        called["args"] = (src, dst)
+
+    monkeypatch.setattr(form_parser, "create_containers", fake_create)
+    body = (
+        "method=create_customer&name=test&konserni=1&"
+        "src_container=valid-src&dest_container=validdest-123&"
+        "file_format=csv&file_encoding=utf-8&"
+        "create_containers_check=true"
+    )
+    messages = []
+    method, result = form_parser.parse_form_data(body, messages)
+
+    assert method == "create_customer"
+    assert called["args"] == ("valid-src/", "validdest-123/")
+    assert all("Invalid" not in m["message"] for m in messages)

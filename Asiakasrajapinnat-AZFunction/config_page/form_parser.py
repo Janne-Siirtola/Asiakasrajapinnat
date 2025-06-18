@@ -1,12 +1,20 @@
 """Form data parsing utilities for the configuration page."""
 
 import logging
+import re
 from typing import Any, Dict, List, Tuple
 from urllib.parse import parse_qs
 
 
 from .storage_utils import create_containers
 from .utils import flash
+
+
+def is_valid_container_name(name: str) -> bool:
+    """Return True if ``name`` is a valid Azure container name."""
+    if not 3 <= len(name) <= 63:
+        return False
+    return re.match(r"^(?!.*--)[a-z0-9](?:[a-z0-9-]*[a-z0-9])$", name) is not None
 
 
 def _parse_base_columns(
@@ -68,13 +76,33 @@ def _parse_enabled(method: str, parsed: Dict[str, List[str]]) -> bool:
     return parsed.get("enabled", [""])[0].strip().lower() == "true"
 
 
-def _parse_containers(parsed: Dict[str, List[str]]) -> Tuple[str, str, str, str]:
-    """Extract container related values from parsed form data."""
-    src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
-    dest_container = parsed.get("dest_container", [""])[
-        0].strip().lower() + "/"
+def _parse_containers(
+    parsed: Dict[str, List[str]], messages: List[Dict[str, str]]
+) -> Tuple[str, str, str, str]:
+    """Extract and validate container related values from parsed form data."""
+    src_container = parsed.get("src_container", [""])[0].strip().lower()
+    dest_container = parsed.get("dest_container", [""])[0].strip().lower()
     file_format = parsed.get("file_format", [""])[0].strip().lower()
     file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
+
+    if src_container and not is_valid_container_name(src_container):
+        flash(
+            messages,
+            "error",
+            f"Invalid source container name '{src_container}'.",
+        )
+    if dest_container and not is_valid_container_name(dest_container):
+        flash(
+            messages,
+            "error",
+            f"Invalid destination container name '{dest_container}'.",
+        )
+
+    if src_container:
+        src_container += "/"
+    if dest_container:
+        dest_container += "/"
+
     return src_container, dest_container, file_format, file_encoding
 
 
@@ -127,14 +155,18 @@ def parse_form_data(
     konserni_raw = parsed.get("konserni", [""])[0].strip()
     konserni_list = _parse_konserni_list(konserni_raw, messages)
     src_container, dest_container, file_format, file_encoding = _parse_containers(
-        parsed)
+        parsed, messages)
     extra_columns = _parse_extra_columns(parsed)
     exclude_list = parsed.get("exclude_columns", [])
 
     if method == "create_customer":
         check_str = parsed.get("create_containers_check", [""])[
             0].strip().lower()
-        if check_str == "true":
+        if (
+            check_str == "true"
+            and is_valid_container_name(src_container.strip("/"))
+            and is_valid_container_name(dest_container.strip("/"))
+        ):
             create_containers(src_container, dest_container, messages)
 
     result = _build_result(
