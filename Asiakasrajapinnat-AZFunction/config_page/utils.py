@@ -5,6 +5,7 @@ import hmac
 import hashlib
 import secrets
 from typing import Any, Dict, List, Optional
+from urllib.parse import unquote
 
 import azure.functions as func
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -139,5 +140,5 @@ def parse_cookie(cookie_header: str) -> Dict[str, str]:
     for part in parts:
         if "=" in part:
             name, val = part.split("=", 1)
-            cookies[name.strip()] = val.strip()
+            cookies[name.strip()] = unquote(val.strip())
     return cookies
