@@ -31,8 +31,8 @@ def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
 
 
 def load_customers_from_config(
-    base_columns: Dict[str, Dict[str, str]],
-    storage: StorageHandler) -> List[Customer]:
+        base_columns: Dict[str, Dict[str, str]],
+        storage: StorageHandler) -> List[Customer]:
     """Read all customer JSON configs and instantiate ``Customer`` objects."""
     customers: List[Customer] = []
     for cfg_file in storage.list_json_blobs(prefix="customer_config/"):
@@ -67,7 +67,7 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
         .validate_concern_number()
         .drop_unmapped_columns()
         .reorder_columns()
-        .cast_and_round()
+        .rename_and_cast_datatypes()
         .validate_final_df()
         .df
     )
@@ -76,7 +76,8 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
 
     builder = DataBuilder(customer)
     if customer.config.file_format.lower() == "csv":
-        data = builder.build_csv(df_final, encoding=customer.config.file_encoding)
+        data = builder.build_csv(
+            df_final, encoding=customer.config.file_encoding)
         blob_name = f"tapahtumat_{customer.config.name}_{ts}.csv"
         content_settings = ContentSettings(
             content_type=f"text/csv; charset={customer.config.file_encoding}"
@@ -90,7 +91,8 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     else:
         raise ValueError(f"Invalid file format: {customer.config.file_format}")
 
-    dst_stg = StorageHandler(customer.config.destination_container, verify_existence=True)
+    dst_stg = StorageHandler(
+        customer.config.destination_container, verify_existence=True)
     dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
     logging.info("Processed customer %s successfully.", customer.config.name)
 

@@ -7,6 +7,7 @@ from typing import Dict, Optional, Set, Union
 
 import pandas as pd
 from .storage_handler import StorageHandler
+from .data_mappings import DataMappings
 
 
 @dataclass
@@ -24,17 +25,6 @@ class CustomerConfig:
     exclude_columns: Optional[list[str]] = None
 
 
-@dataclass
-class CustomerMappings:
-    """Container for generated column mappings."""
-    rename_map: Dict[str, str] = field(default_factory=dict)
-    dtype_map: Dict[str, str] = field(default_factory=dict)
-    decimals_map: Dict[str, int] = field(default_factory=dict)
-    combined_columns: Dict[str, Dict[str, Union[str, int]]] = field(
-        default_factory=dict)
-    allowed_columns: Dict[str, str] = field(default_factory=dict)
-
-
 class Customer:
     """Configuration data and helpers for an individual customer."""
 
@@ -50,7 +40,7 @@ class Customer:
             for c in self.exclude_columns:
                 self.base_columns.pop(c)
 
-        self.mappings = CustomerMappings()
+        self.mappings = DataMappings()
 
         self.generate_combined_columns()
         self.generate_data_maps()

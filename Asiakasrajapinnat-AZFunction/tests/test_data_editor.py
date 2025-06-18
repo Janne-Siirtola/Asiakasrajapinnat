@@ -1,12 +1,12 @@
+from asiakasrajapinnat_master.data_editor import DataEditor
+from asiakasrajapinnat_master.customer import Customer, CustomerConfig
 import os
 import sys
 import pandas as pd
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Asiakasrajapinnat-AZFunction")))
-
-from asiakasrajapinnat_master.customer import Customer, CustomerConfig
-from asiakasrajapinnat_master.data_editor import DataEditor
+sys.path.insert(0, os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "..", "Asiakasrajapinnat-AZFunction")))
 
 
 def make_editor(invalid=False):
@@ -43,7 +43,7 @@ def test_data_editor_processing():
         .validate_concern_number()
         .drop_unmapped_columns()
         .reorder_columns()
-        .cast_and_round()
+        .rename_and_cast_datatypes()
         .validate_final_df()
         .df
     )
@@ -60,4 +60,3 @@ def test_validate_concern_number_fails():
     editor.delete_row(0)
     with pytest.raises(ValueError):
         editor.validate_concern_number()
-

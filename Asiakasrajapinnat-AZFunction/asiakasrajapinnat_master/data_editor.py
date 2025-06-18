@@ -4,7 +4,6 @@ import logging
 import pandas as pd
 
 from .customer import Customer
-from .editor_mappings import EditorMappings
 
 
 class DataEditor:
@@ -16,13 +15,7 @@ class DataEditor:
 
         self.target_row_count = len(self.df) - 1
 
-        self.mappings = EditorMappings(
-            rename_map=customer.mappings.rename_map,
-            dtype_map=customer.mappings.dtype_map,
-            decimals_map=customer.mappings.decimals_map,
-            combined_columns=customer.mappings.combined_columns,
-            allowed_columns=customer.mappings.allowed_columns,
-        )
+        self.mappings = customer.mappings
 
     def delete_row(self, idx: int) -> "DataEditor":
         """Remove a row by index from the working DataFrame."""
@@ -69,7 +62,7 @@ class DataEditor:
         self.df = self.df[ordered]
         return self
 
-    def cast_and_round(self) -> "DataEditor":
+    def rename_and_cast_datatypes(self) -> "DataEditor":
         """
         Cast the DataFrame columns to their specified types and round them if necessary.
         """
@@ -89,7 +82,7 @@ class DataEditor:
 
             series = self.df[col]
 
-            if dt.startswith('float') or dt in ('Float64',):
+            if dt.startswith('float'):
                 # normalize decimal separator
                 series = series.astype(str).str.replace(',', '.', regex=False)
                 self.df[col] = series.astype(float)
