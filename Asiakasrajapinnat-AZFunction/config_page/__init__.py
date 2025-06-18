@@ -9,9 +9,15 @@ from .handlers import handle_get, handle_post
 __all__ = ["main"]
 
 
+# Silence the Blob SDK’s HTTP logs
+logging.getLogger("azure.storage.blob").setLevel(logging.WARNING)
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+    logging.WARNING)
+
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """Azure Function entry point for serving and processing the form."""
-    logging.info("ServeConfig function processed a request.")
+    logging.info("config_page function processed a request.")
 
     if req.method == "GET":
         return handle_get(req)

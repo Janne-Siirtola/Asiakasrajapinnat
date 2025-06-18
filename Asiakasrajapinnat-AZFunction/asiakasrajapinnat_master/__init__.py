@@ -17,7 +17,11 @@ from .data_editor import DataEditor
 from .main_config import load_main_config
 from .storage_handler import StorageHandler
 
-# version 1.25
+
+# Silence the Blob SDK’s HTTP logs
+logging.getLogger("azure.storage.blob").setLevel(logging.WARNING)
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+    logging.WARNING)
 
 
 def get_timestamp(strftime: str = "%Y-%m-%d %H:%M:%S") -> str:
@@ -100,7 +104,6 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
 def main(mytimer: func.TimerRequest) -> None:
     """Entry point for the timer triggered function."""
     try:
-        logging.basicConfig(level=logging.INFO)
         logging.info("Process started at %s.", get_timestamp())
         start_time = time.perf_counter()
 
