@@ -62,6 +62,9 @@
         method="post" action
         {% if method == 'edit_customer' %}hidden{% endif %}>
 
+        <!-- CSRF token -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
         <!-- let the backend know what we were doing -->
         <input type="hidden" id="methodInput" name="method" value="{{ method }}">
 

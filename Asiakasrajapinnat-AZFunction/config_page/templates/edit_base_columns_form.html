@@ -35,6 +35,7 @@
     <div class="container">
       <h1>Muokkaa perussarakkeita</h1>
       <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="method" value="edit_base_columns">
         <div class="base-columns-header">
           <span class="header-spacer"></span>

@@ -4,6 +4,7 @@ import json
 import logging
 import traceback
 from typing import Any, Dict, List, Optional
+from urllib.parse import parse_qs
 
 import azure.functions as func
 from azure.core.exceptions import AzureError
@@ -20,12 +21,16 @@ from .utils import (
     get_html_blocks,
     get_js_blocks,
     render_template,
+    generate_csrf_token,
+    validate_csrf_token,
+    parse_cookie,
 )
 
 
 def prepare_template_context(
     method: str = "",
     messages: Optional[List[Dict[str, str]]] = None,
+    csrf_token: str = "",
 ) -> Dict[str, Any]:
     """Collect template data for rendering HTML pages."""
     if messages is None:
@@ -64,6 +69,7 @@ def prepare_template_context(
         "customers": customers,
         "messages": messages,
         "base_columns": main_config.base_columns,
+        "csrf_token": csrf_token,
     }
 
 
@@ -82,7 +88,13 @@ def handle_get(req: func.HttpRequest) -> func.HttpResponse:
     try:
         method = req.params.get("method", "").strip()
         messages: List[Dict[str, str]] = []
-        context = prepare_template_context(method=method, messages=messages)
+        token, cookie_val = generate_csrf_token()
+        context = prepare_template_context(
+            method=method, messages=messages, csrf_token=token
+        )
+        context["headers"] = {
+            "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
+        }
         return render_template(context)
     except (TemplateError, AzureError) as err:
         return handle_error(err)
@@ -92,8 +104,23 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
     """Process a POST request."""
     try:
         messages: List[Dict[str, str]] = []
+        raw_body = req.get_body().decode("utf-8")
+        parsed = parse_qs(raw_body, keep_blank_values=True)
+        form_token = parsed.get("csrf_token", [""])[0]
+        cookie_header = req.headers.get("Cookie", "")
+        cookie_token = parse_cookie(cookie_header).get("csrf_token", "")
+        if not validate_csrf_token(form_token, cookie_token):
+            logging.warning("Invalid CSRF token")
+            flash(messages, "error", "Invalid form submission.")
+            token, cookie_val = generate_csrf_token()
+            context = prepare_template_context(messages=messages, csrf_token=token)
+            context["headers"] = {
+                "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
+            }
+            context["status_code"] = 400
+            return render_template(context)
+
         try:
-            raw_body = req.get_body().decode("utf-8")
             method, result = parse_form_data(raw_body, messages)
             name = result["name"] if isinstance(
                 result, dict) and "name" in result else ""
@@ -166,7 +193,11 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
         elif method == "edit_base_columns" and not error_occurred:
             flash(messages, "success", "Base columns updated successfully.")
 
-        context = prepare_template_context(messages=messages)
+        token, cookie_val = generate_csrf_token()
+        context = prepare_template_context(messages=messages, csrf_token=token)
+        context["headers"] = {
+            "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
+        }
         return render_template(context)
     except (AzureError, TemplateError, ValueError) as err:
         return handle_error(err)
