@@ -9,4 +9,4 @@ def test_authentication():
 
     resp = requests.get(url, params=params, timeout=10)
 
-    assert resp.status_code == 4011, f"Unauthenticated GET {params['method']} succeeded"
+    assert resp.status_code == 401, f"Unauthenticated GET {params['method']} succeeded"
