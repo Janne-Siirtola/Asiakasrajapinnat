@@ -52,10 +52,13 @@ def prepare_template_context(
         template_name = "edit_base_columns_form.html"
         css_blocks = get_css_blocks(file_specific_styles=["edit_base_columns.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["edit_base_columns.js"])
-    else:
+    elif method == "home":
         template_name = "index.html"
         css_blocks = get_css_blocks(file_specific_styles=["index.css"])
         js_blocks = get_js_blocks()
+    else:
+        logging.error("Unknown method '%s' in request", method)
+        raise ClientError(f"Unknown method '{method}'")
 
     html_blocks = get_html_blocks()
 
@@ -200,7 +203,7 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                 flash(messages, "success", "Base columns updated successfully.")
 
         token, cookie_val = generate_csrf_token()
-        context = prepare_template_context(messages=messages, csrf_token=token)
+        context = prepare_template_context(method="home", messages=messages, csrf_token=token)
         context["headers"] = {
             "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
         }
