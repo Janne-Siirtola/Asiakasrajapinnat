@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!-- Landing page listing the available configuration actions -->
-<html lang="en">
+<html lang="fi">
 <head>
   <meta charset="utf-8">
-  <title>Customer Portal – Landing</title>
+  <title>Asiakasportaali – Pääsivu</title>
 
   {% if css_blocks %}
   <style>
@@ -29,7 +29,7 @@
     <div class="flash {{ msg.category }}">
       {{ msg.message }}
       <!-- add this button: -->
-      <button type="button" class="flash-close" aria-label="Close">&times;</button>
+      <button type="button" class="flash-close" aria-label="Sulje">&times;</button>
     </div>
     {% endfor %}
   </div>
@@ -37,24 +37,24 @@
 
 
   <main class="landing">
-    <h1>Customer Management</h1>
+    <h1>Asiakashallinta</h1>
 
     <section class="actions">
       <a class="card create"
          href="/api/config_page?method=create_customer">
-        <h2>Create Customer</h2>
-        <p>Add a new customer and configure its containers.</p>
+        <h2>Luo asiakas</h2>
+        <p>Lisää uusi asiakas ja määritä sen kontit.</p>
       </a>
 
       <a class="card edit"
          href="/api/config_page?method=edit_customer">
-        <h2>Edit Customer</h2>
-        <p>Modify or delete an existing customer.</p>
+        <h2>Muokkaa asiakasta</h2>
+        <p>Muokkaa tai poista olemassa oleva asiakas.</p>
       </a>
 
       <a class="card basecols" href="/api/config_page?method=edit_basecols">
-        <h2>Edit Base Columns</h2>
-        <p>Modify the default column list.</p>
+        <h2>Muokkaa perussarakkeita</h2>
+        <p>Muokkaa oletussarakelistaa.</p>
       </a>
     </section>
   </main>

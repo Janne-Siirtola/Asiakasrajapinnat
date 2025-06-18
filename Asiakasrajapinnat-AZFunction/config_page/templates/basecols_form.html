@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!-- Form for editing the global default column list -->
-<html lang="en">
+<html lang="fi">
 <head>
   <meta charset="utf-8">
-  <title>Edit Base Columns</title>
+  <title>Muokkaa perussarakkeita</title>
   {% if css_blocks %}
   <style>
     {%- for block in css_blocks %}
@@ -25,74 +25,74 @@
     {% for msg in messages %}
     <div class="flash {{ msg.category }}">
       {{ msg.message }}
-      <button type="button" class="flash-close" aria-label="Close">&times;</button>
+      <button type="button" class="flash-close" aria-label="Sulje">&times;</button>
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
   <div class="container">
-    <h1>Edit Base Columns</h1>
+    <h1>Muokkaa perussarakkeita</h1>
     <form method="post">
       <input type="hidden" name="method" value="edit_basecols">
       <div id="baseColumnsContainer">
         {% for key, col in base_columns.items() %}
         <div class="base-columns-group">
-          <button type="button" class="removeColumnBtn">Remove</button>
+          <button type="button" class="removeColumnBtn">Poista</button>
           <div class="form-group">
-            <label>Column Key</label>
+            <label>Sarakeavain</label>
             <input type="text" name="key" value="{{ key }}" required>
           </div>
           <div class="form-group">
-            <label>Display Name</label>
+            <label>Näyttönimi</label>
             <input type="text" name="name" value="{{ col.name }}" required>
           </div>
           <div class="form-group">
-            <label>Data Type</label>
+            <label>Tietotyyppi</label>
             <select name="dtype">
-              <option value="string" {% if col.dtype == 'string' %}selected{% endif %}>String</option>
-              <option value="float" {% if col.dtype == 'float' %}selected{% endif %}>Float</option>
+              <option value="string" {% if col.dtype == 'string' %}selected{% endif %}>Merkkijono</option>
+              <option value="float" {% if col.dtype == 'float' %}selected{% endif %}>Liukuluku</option>
             </select>
           </div>
           <div class="form-group decimals-group">
-            <label>Decimals</label>
+            <label>Desimaalit</label>
             <input type="number" name="decimals" min="0" value="{{ col.decimals | default('') }}">
           </div>
             <!-- DRAG HANDLE -->
-            <span class="drag-handle" title="Drag to reorder">≡</span>
+            <span class="drag-handle" title="Raahaa järjestykseen">≡</span>
         </div>
         {% endfor %}
       </div>
 
       <template id="baseColumnTemplate">
         <div class="base-columns-group">
-          <button type="button" class="removeColumnBtn">Remove</button>
+          <button type="button" class="removeColumnBtn">Poista</button>
           <div class="form-group">
-            <label>Column Key</label>
+            <label>Sarakeavain</label>
             <input type="text" name="key">
           </div>
           <div class="form-group">
-            <label>Display Name</label>
+            <label>Näyttönimi</label>
             <input type="text" name="name">
           </div>
           <div class="form-group">
-            <label>Data Type</label>
+            <label>Tietotyyppi</label>
             <select name="dtype">
-              <option value="string">String</option>
-              <option value="float">Float</option>
+              <option value="string">Merkkijono</option>
+              <option value="float">Liukuluku</option>
             </select>
           </div>
           <div class="form-group decimals-group">
-            <label>Decimals</label>
+            <label>Desimaalit</label>
             <input type="number" name="decimals" min="0">
           </div>
           <!-- DRAG HANDLE -->
-          <span class="drag-handle" title="Drag to reorder">≡</span>          
+          <span class="drag-handle" title="Raahaa järjestykseen">≡</span>
         </div>
       </template>
 
-      <button type="button" id="addBaseColumnBtn">+ Add Base Column</button>
-      <button type="submit" class="submit-btn">Save</button>
+      <button type="button" id="addBaseColumnBtn">+ Lisää perussarake</button>
+      <button type="submit" class="submit-btn">Tallenna</button>
     </form>
   </div>
 

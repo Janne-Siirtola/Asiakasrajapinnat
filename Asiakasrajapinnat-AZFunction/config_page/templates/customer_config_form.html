@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!-- Form used when creating or editing a customer configuration -->
-<html lang="en">
+<html lang="fi">
   <head>
     <meta charset="utf-8" />
     <title>
       Asiakasrajapinnat -
-      {{ "Create Customer" if method == "create_customer" else "Edit Customer" }}
+      {{ "Luo asiakas" if method == "create_customer" else "Muokkaa asiakasta" }}
     </title>
 
     {# — optional raw‑CSS blocks if you still use that mechanism — #}
@@ -33,7 +33,7 @@
         {{ msg.message }}
         <!-- add this button: -->
         <button type="button" class="flash-close"
-          aria-label="Close">&times;</button>
+          aria-label="Sulje">&times;</button>
       </div>
       {% endfor %}
     </div>
@@ -44,12 +44,12 @@
       1. CUSTOMER LIST (only in “edit” mode)
       ───────────────────────────────────────────────────── #}
       {% if method == "edit_customer" %}
-      <h1 id="listTitle">Choose Customer</h1>
+      <h1 id="listTitle">Valitse asiakas</h1>
       <ul id="customerList" class="customer-list">
         {% for cust in customers %}
         <li>
           <span class="name">{{ cust.name }}</span>
-          <button class="edit-btn" data-name="{{ cust.name }}">Edit</button>
+          <button class="edit-btn" data-name="{{ cust.name }}">Muokkaa</button>
         </li>
         {% endfor %}
       </ul>
@@ -66,56 +66,56 @@
         <input type="hidden" name="method" value="{{ method }}">
 
         <h1 id="formTitle">
-          {{ "Create Customer" if method == "create_customer" else "" }}
+          {{ "Luo asiakas" if method == "create_customer" else "" }}
         </h1>
 
         <!-- Customer Name (read‑only in edit) -->
         <div class="form-group">
-          <label for="name" h>Customer Name 
+          <label for="name" h>Asiakkaan nimi
           </label> 
           <input type="text" id="name" name="name"
           {% if method == 'edit_customer' %}readonly{% endif %}
-          placeholder="e.g. yit" required>
+          placeholder="esim. yit" required>
           {% if method == 'edit_customer' %}
-            <small>Read-Only while editing</small>
+            <small>Vain luku -tilassa muokattaessa</small>
           {% endif %}
         </div>
 
         <!-- Concern Numbers -->
         <div class="form-group">
-          <label for="konserni">Concern Number(s)</label>
+          <label for="konserni">Konserninumerot</label>
           <input type="text" id="konserni" name="konserni"
-            placeholder="e.g. 2208, 1234" required>
-          <small>Separate multiple numbers with commas</small>
+            placeholder="esim. 2208, 1234" required>
+          <small>Erottele numerot pilkuilla</small>
         </div>
 
         <!-- Source Container (read‑only in edit) -->
         <div class="form-group">
-          <label for="src_container">Source Container
+          <label for="src_container">Lähdekontti
           </label>
           <input type="text" id="src_container" name="src_container"
           {% if method == 'edit_customer' %}readonly{% endif %}
-          placeholder="e.g. testi" required>
+          placeholder="esim. testi" required>
           {% if method == 'edit_customer' %}
-            <small>Read-Only while editing</small>
+            <small>Vain luku -tilassa muokattaessa</small>
           {% endif %}
         </div>
 
         <!-- Destination Container (read‑only in edit) -->
         <div class="form-group">
-          <label for="dest_container">Destination Container
+          <label for="dest_container">Kohdekontti
           </label>
           <input type="text" id="dest_container" name="dest_container"
           {% if method == 'edit_customer' %}readonly{% endif %}
-          placeholder="e.g. testi" required>
+          placeholder="esim. testi" required>
           {% if method == 'edit_customer' %}
-            <small>Read-Only while editing</small>
+            <small>Vain luku -tilassa muokattaessa</small>
           {% endif %}
         </div>
 
         <!-- File Format -->
         <div class="form-group">
-          <label for="file_format">Output File Format</label>
+          <label for="file_format">Tulostiedoston muoto</label>
           <select id="file_format" name="file_format" required>
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
@@ -124,7 +124,7 @@
 
         <!-- File Encoding-->
         <div class="form-group">
-          <label for="file_encoding">Output File Encoding</label>
+          <label for="file_encoding">Tiedoston merkistökoodaus</label>
           <select id="file_encoding" name="file_encoding" required>
             <option value="utf-8">UTF-8</option>
             <option value="iso-8859-1">ISO-8859-1</option>
@@ -133,27 +133,27 @@
 
         <!-- Extra Columns (template + container) -->
         <fieldset>
-          <legend>Extra Columns {{ "(optional)" if method == "create_customer" else ""
+          <legend>Lisäsarakkeet {{ "(valinnainen)" if method == "create_customer" else ""
             }}</legend>
           <div id="extraColumnsContainer"></div>
 
           <!-- Template to clone -->
           <template id="extraColumnTemplate">
             <div class="extra-columns-group">
-              <button type="button" class="removeColumnBtn">Remove</button>
+              <button type="button" class="removeColumnBtn">Poista</button>
               <div class="form-group">
-                <label>Column Key</label>
-                <input type="text" name="extra_key" placeholder="e.g. PRTName">
+                <label>Sarakeavain</label>
+                <input type="text" name="extra_key" placeholder="esim. PRTName">
               </div>
               <div class="form-group">
-                <label>Display Name</label>
-                <input type="text" name="extra_name" placeholder="e.g. Asiakasryhma">
+                <label>Näyttönimi</label>
+                <input type="text" name="extra_name" placeholder="esim. Asiakasryhma">
               </div>
               <div class="form-group">
-                <label>Data Type</label>
+                <label>Tietotyyppi</label>
                 <select name="extra_dtype">
-                  <option value="string">String</option>
-                  <option value="float">Float</option>
+                  <option value="string">Merkkijono</option>
+                  <option value="float">Liukuluku</option>
                 </select>
               </div>
             </div>
@@ -161,16 +161,15 @@
 
 
           <button type="button" id="addExtraColumnBtn">
-            {{ "+ Add Extra Column" if method == "create_customer" else "+ Lisää sarake"
-            }}
+            {{ "+ Lisää lisäsarake" }}
           </button>
         </fieldset>
 
         <!-- Exclude Columns -->
         <div class="form-group">
           <label>
-            Exclude From Base Columns {{ "(optional)" if method=="create_customer" else "" }}
-            <span id="excludeCount">0 selected</span>
+            Poista perussarakkeista {{ "(valinnainen)" if method=="create_customer" else "" }}
+            <span id="excludeCount">0 valittu</span>
           </label>
           <div id="excludeList" class="exclude-list">
             {% for key, col in base_columns.items() %}
@@ -190,12 +189,11 @@
         {% if method == "create_customer" %}
         <div class="form-group">
           <label for="create_containers_check">
-            Do you want to create source and destination containers for this
-            customer?
+            Haluatko luoda lähde- ja kohdekontit tälle asiakkaalle?
           </label>
           <select name="create_containers_check" id="create_containers_check">
-            <option value="true" selected>Yes</option>
-            <option value="false">No</option>
+            <option value="true" selected>Kyllä</option>
+            <option value="false">Ei</option>
           </select>
         </div>
         {% endif %}
@@ -203,23 +201,23 @@
         <!-- Enabled (only in edit mode) -->
         {% if method == "edit_customer" %}
         <div class="form-group">
-          <label for="enabled">Enabled</label>
+          <label for="enabled">Käytössä</label>
           <select id="enabled" name="enabled" required>
-            <option value="true">True</option>
-            <option value="false">False</option>
+            <option value="true">Kyllä</option>
+            <option value="false">Ei</option>
           </select>
         </div>
         {% endif %}
 
         <!-- Submit / Cancel -->
         <button type="submit" class="submit-btn">
-          {{ "Create Customer" if method == "create_customer" else "Save" }}
+          {{ "Luo asiakas" if method == "create_customer" else "Tallenna" }}
         </button>
 
         {% if method == "edit_customer" %}
         <button type="button" id="cancelBtn" class="submit-btn"
           style="margin-top:8px;background:#777;">
-          Cancel
+          Peruuta
         </button>
         {% endif %}
       </form>
