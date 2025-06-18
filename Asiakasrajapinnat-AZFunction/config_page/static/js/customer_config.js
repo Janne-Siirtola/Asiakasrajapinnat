@@ -54,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const form        = document.getElementById("editForm");
   const formTitle   = document.getElementById("formTitle");
   const cancelBtn   = document.getElementById("cancelBtn");
+  const deleteBtn   = document.getElementById("deleteBtn");
+  const methodInput = document.getElementById("methodInput");
 
   /* helpers */
   const $ = id => form.querySelector("#" + id);
@@ -113,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fields.file_encoding.value   = cust.file_encoding || "";
     fields.enabled.value        = cust.enabled.toString() || "";
 
+    // ensure form submits as an edit unless changed later
+    if (methodInput) methodInput.value = "edit_customer";
+
     fields.extraContainer.innerHTML = "";
     if (cust.extra_columns) {
       for (const [k, info] of Object.entries(cust.extra_columns)) {
@@ -142,4 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
     customerUl.hidden = false;
     listTitle.hidden  = false;
   };
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      const name = fields.name.value;
+      if (!name) return;
+      if (confirm(`Poista asiakas '${name}'? Tätä toimintoa ei voi perua.` + 
+        '\n\nTämä toiminto poistaa vain asiakkaan json-konfiguraatiotiedoston, mutta ei lähde- tai kohdekonttia. Poista lähde- ja kohdekontit erikseen, jos ne eivät ole enää tarpeellisia.')) {
+        if (methodInput) methodInput.value = 'delete_customer';
+        form.submit();
+      }
+    });
+  }
 })();

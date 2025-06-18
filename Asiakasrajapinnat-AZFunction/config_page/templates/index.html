@@ -1,69 +1,70 @@
 <!DOCTYPE html>
 <!-- Landing page listing the available configuration actions -->
 <html lang="fi">
-<head>
-  <meta charset="utf-8">
-  <title>Asiakasportaali – Pääsivu</title>
+  <head>
+    <meta charset="utf-8">
+    <title>Asiakasportaali – Pääsivu</title>
 
-  {% if css_blocks %}
-  <style>
+    {% if css_blocks %}
+    <style>
     {%- for block in css_blocks %}
       {{ block | safe }}
     {%- endfor %}
   </style>
-  {% endif %}
-</head>
-<body>
+    {% endif %}
+  </head>
+  <body>
 
-  {# top navigation bar #}
-  {% if html_blocks %}
+    {# top navigation bar #}
+    {% if html_blocks %}
     {% for block in html_blocks if block.name == 'navbar.html' %}
     {{ block.content | safe }}
     {% endfor %}
-  {% endif %}
+    {% endif %}
 
-  <!-- ⚡ flash messages -->
-  {% if messages %}
-  <div id="flash-container">
-    {% for msg in messages %}
-    <div class="flash {{ msg.category }}">
-      {{ msg.message }}
-      <!-- add this button: -->
-      <button type="button" class="flash-close" aria-label="Sulje">&times;</button>
+    <!-- ⚡ flash messages -->
+    {% if messages %}
+    <div id="flash-container">
+      {% for msg in messages %}
+      <div class="flash {{ msg.category }}">
+        {{ msg.message }}
+        <!-- add this button: -->
+        <button type="button" class="flash-close"
+          aria-label="Sulje">&times;</button>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+    {% endif %}
 
+    <main class="landing">
+      <h1>Asiakashallinta</h1>
 
-  <main class="landing">
-    <h1>Asiakashallinta</h1>
+      <section class="actions">
+        <a class="card create"
+          href="/api/config_page?method=create_customer">
+          <h2>Luo asiakas</h2>
+          <p>Lisää uusi asiakas ja määritä sen kontit.</p>
+        </a>
 
-    <section class="actions">
-      <a class="card create"
-         href="/api/config_page?method=create_customer">
-        <h2>Luo asiakas</h2>
-        <p>Lisää uusi asiakas ja määritä sen kontit.</p>
-      </a>
+        <a class="card edit"
+          href="/api/config_page?method=edit_customer">
+          <h2>Muokkaa asiakasta</h2>
+          <p>Muokkaa tai poista olemassa oleva asiakas.</p>
+        </a>
 
-      <a class="card edit"
-         href="/api/config_page?method=edit_customer">
-        <h2>Muokkaa asiakasta</h2>
-        <p>Muokkaa tai poista olemassa oleva asiakas.</p>
-      </a>
-
-      <a class="card basecols" href="/api/config_page?method=edit_basecols">
-        <h2>Muokkaa perussarakkeita</h2>
-        <p>Muokkaa oletussarakelistaa.</p>
-      </a>
-    </section>
-  </main>
-  {% if js_blocks %}
+        <a class="card basecols"
+          href="/api/config_page?method=edit_base_columns">
+          <h2>Muokkaa perussarakkeita</h2>
+          <p>Muokkaa oletussarakelistaa.</p>
+        </a>
+      </section>
+    </main>
+    {% if js_blocks %}
     <script>
       {%- for block in js_blocks %}
         {{ block | safe }}
       {%- endfor %}
     </script>
-  {% endif %}
-</body>
+    {% endif %}
+  </body>
 </html>

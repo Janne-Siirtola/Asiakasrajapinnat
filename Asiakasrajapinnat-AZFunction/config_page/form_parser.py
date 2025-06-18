@@ -28,7 +28,8 @@ def _parse_base_columns(
             try:
                 col["decimals"] = int(dec)
             except ValueError:
-                flash(messages, "error", f"Invalid decimal value for column '{k}': {dec.strip()}")
+                flash(messages, "error",
+                      f"Invalid decimal value for column '{k}': {dec.strip()}")
         basecols[k] = col
     return basecols
 
@@ -70,7 +71,8 @@ def _parse_enabled(method: str, parsed: Dict[str, List[str]]) -> bool:
 def _parse_containers(parsed: Dict[str, List[str]]) -> Tuple[str, str, str, str]:
     """Extract container related values from parsed form data."""
     src_container = parsed.get("src_container", [""])[0].strip().lower() + "/"
-    dest_container = parsed.get("dest_container", [""])[0].strip().lower() + "/"
+    dest_container = parsed.get("dest_container", [""])[
+        0].strip().lower() + "/"
     file_format = parsed.get("file_format", [""])[0].strip().lower()
     file_encoding = parsed.get("file_encoding", [""])[0].strip().lower()
     return src_container, dest_container, file_format, file_encoding
@@ -109,9 +111,13 @@ def parse_form_data(
     parsed = parse_qs(body, keep_blank_values=True)
 
     method = parsed.get("method", [""])[0].strip().lower()
-    if method == "edit_basecols":
+    if method == "edit_base_columns":
         basecols = _parse_base_columns(parsed, messages)
         return method, basecols
+
+    if method == "delete_customer":
+        name = parsed.get("name", [""])[0].strip().lower()
+        return method, name
 
     if method not in ["create_customer", "edit_customer"]:
         raise ValueError("Invalid method")
@@ -120,12 +126,14 @@ def parse_form_data(
     name = parsed.get("name", [""])[0].strip().lower()
     konserni_raw = parsed.get("konserni", [""])[0].strip()
     konserni_list = _parse_konserni_list(konserni_raw, messages)
-    src_container, dest_container, file_format, file_encoding = _parse_containers(parsed)
+    src_container, dest_container, file_format, file_encoding = _parse_containers(
+        parsed)
     extra_columns = _parse_extra_columns(parsed)
     exclude_list = parsed.get("exclude_columns", [])
 
     if method == "create_customer":
-        check_str = parsed.get("create_containers_check", [""])[0].strip().lower()
+        check_str = parsed.get("create_containers_check", [""])[
+            0].strip().lower()
         if check_str == "true":
             create_containers(src_container, dest_container, messages)
 

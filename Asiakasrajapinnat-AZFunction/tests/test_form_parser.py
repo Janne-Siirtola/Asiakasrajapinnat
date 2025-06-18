@@ -1,3 +1,4 @@
+from config_page import form_parser
 import sys
 import os
 
@@ -12,19 +13,18 @@ os.environ.setdefault(
 )
 
 # Ensure package can be imported
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Asiakasrajapinnat-AZFunction")))
+sys.path.insert(0, os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "..", "Asiakasrajapinnat-AZFunction")))
 
-from config_page import form_parser
 
-
-def test_edit_basecols_parsing(monkeypatch):
+def test_edit_base_columns_parsing(monkeypatch):
     body = (
-        "method=edit_basecols&"
+        "method=edit_base_columns&"
         "key=foo&name=Foo&dtype=int&decimals=&"
         "key=bar&name=Bar&dtype=float&decimals=2"
     )
     method, result = form_parser.parse_form_data(body, [])
-    assert method == "edit_basecols"
+    assert method == "edit_base_columns"
     assert result == {
         "foo": {"name": "Foo", "dtype": "int"},
         "bar": {"name": "Bar", "dtype": "float", "decimals": 2},
@@ -56,3 +56,8 @@ def test_create_customer_calls_create_containers(monkeypatch):
     assert result["file_encoding"] == "utf-8"
 
 
+def test_delete_customer_parsing():
+    body = "method=delete_customer&name=test"
+    method, result = form_parser.parse_form_data(body, [])
+    assert method == "delete_customer"
+    assert result == "test"

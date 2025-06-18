@@ -63,7 +63,7 @@
         {% if method == 'edit_customer' %}hidden{% endif %}>
 
         <!-- let the backend know what we were doing -->
-        <input type="hidden" name="method" value="{{ method }}">
+        <input type="hidden" id="methodInput" name="method" value="{{ method }}">
 
         <h1 id="formTitle">
           {{ "Luo asiakas" if method == "create_customer" else "" }}
@@ -218,6 +218,10 @@
         <button type="button" id="cancelBtn" class="submit-btn"
           style="margin-top:8px;background:#777;">
           Peruuta
+        </button>
+        <button type="button" id="deleteBtn" class="submit-btn"
+          style="margin-top:8px;background:#c00;">
+          Poista asiakas
         </button>
         {% endif %}
       </form>

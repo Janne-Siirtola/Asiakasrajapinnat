@@ -41,7 +41,7 @@ def prepare_template_context(
         css_blocks = get_css_blocks(
             file_specific_styles=["customer_config.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["customer_config.js"])
-    elif method == "edit_basecols":
+    elif method == "edit_base_columns":
         template_name = "basecols_form.html"
         css_blocks = get_css_blocks(file_specific_styles=["basecols_form.css"])
         js_blocks = get_js_blocks(file_specific_scripts=["basecols_form.js"])
@@ -105,7 +105,7 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json",
             )
 
-        if method == "edit_basecols":
+        if method == "edit_base_columns":
             new_cfg = {"base_columns": result}
             conf_stg.upload_blob(
                 "main_config.json",
@@ -142,6 +142,15 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                         content_type="application/json; charset=utf-8"
                     ),
                 )
+        elif method == "delete_customer":
+            try:
+                conf_stg.container_client.delete_blob(
+                    f"customer_config/{result}.json")
+                logging.info("Deleted configuration for customer '%s'", result)
+            except AzureError as e:
+                logging.error("Failed to delete customer '%s': %s", result, e)
+                flash(messages, "error",
+                      f"Failed to delete customer '{result}': {e}")
 
         error_occurred = any(f["category"] == "error" for f in messages)
 
@@ -151,7 +160,10 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
         elif method == "edit_customer" and not error_occurred:
             flash(messages, "success",
                   f"Customer '{name}' updated successfully.")
-        elif method == "edit_basecols" and not error_occurred:
+        elif method == "delete_customer" and not error_occurred:
+            flash(messages, "success",
+                  f"Customer '{result}' deleted successfully.")
+        elif method == "edit_base_columns" and not error_occurred:
             flash(messages, "success", "Base columns updated successfully.")
 
         context = prepare_template_context(messages=messages)

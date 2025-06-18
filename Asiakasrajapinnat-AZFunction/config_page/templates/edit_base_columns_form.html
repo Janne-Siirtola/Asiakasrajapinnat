@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!-- Form for editing the global default column list -->
+<html lang="fi">
+  <head>
+    <meta charset="utf-8">
+    <title>Muokkaa perussarakkeita</title>
+    {% if css_blocks %}
+    <style>
+    {%- for block in css_blocks %}
+      {{ block | safe }}
+    {%- endfor %}
+  </style>
+    {% endif %}
+  </head>
+  <body>
+    {% if html_blocks %}
+    {% for block in html_blocks if block.name == 'navbar.html' %}
+    {{ block.content | safe }}
+    {% endfor %}
+    {% endif %}
+
+    <!-- flash messages -->
+    {% if messages %}
+    <div id="flash-container">
+      {% for msg in messages %}
+      <div class="flash {{ msg.category }}">
+        {{ msg.message }}
+        <button type="button" class="flash-close"
+          aria-label="Sulje">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">
+      <h1>Muokkaa perussarakkeita</h1>
+      <form method="post">
+        <input type="hidden" name="method" value="edit_base_columns">
+        <div id="baseColumnsContainer">
+          {% for key, col in base_columns.items() %}
+          <div class="base-columns-group">
+            <button type="button" class="removeColumnBtn">Poista</button>
+            <div class="form-group">
+              <label>Sarakeavain</label>
+              <input type="text" name="key" value="{{ key }}" required>
+            </div>
+            <div class="form-group">
+              <label>Näyttönimi</label>
+              <input type="text" name="name" value="{{ col.name }}" required>
+            </div>
+            <div class="form-group">
+              <label>Tietotyyppi</label>
+              <select name="dtype">
+                <option value="string" {% if col.dtype == 'string' %}selected{%
+                  endif %}>Merkkijono</option>
+                <option value="float" {% if col.dtype == 'float' %}selected{%
+                  endif %}>Liukuluku</option>
+              </select>
+            </div>
+            <div class="form-group decimals-group">
+              <label>Desimaalit</label>
+              <input type="number" name="decimals" min="0"
+                value="{{ col.decimals | default('') }}">
+            </div>
+            <!-- DRAG HANDLE -->
+            <span class="drag-handle" title="Raahaa järjestykseen">≡</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <template id="baseColumnTemplate">
+          <div class="base-columns-group">
+            <button type="button" class="removeColumnBtn">Poista</button>
+            <div class="form-group">
+              <label>Sarakeavain</label>
+              <input type="text" name="key">
+            </div>
+            <div class="form-group">
+              <label>Näyttönimi</label>
+              <input type="text" name="name">
+            </div>
+            <div class="form-group">
+              <label>Tietotyyppi</label>
+              <select name="dtype">
+                <option value="string">Merkkijono</option>
+                <option value="float">Liukuluku</option>
+              </select>
+            </div>
+            <div class="form-group decimals-group">
+              <label>Desimaalit</label>
+              <input type="number" name="decimals" min="0">
+            </div>
+            <!-- DRAG HANDLE -->
+            <span class="drag-handle" title="Raahaa järjestykseen">≡</span>
+          </div>
+        </template>
+
+        <button type="button" id="addBaseColumnBtn">+ Lisää perussarake</button>
+        <button type="submit" class="submit-btn">Tallenna</button>
+      </form>
+    </div>
+
+    {% if js_blocks %}
+    <script>
+    {%- for block in js_blocks %}
+      {{ block | safe }}
+    {%- endfor %}
+  </script>
+    {% endif %}
+  </body>
+</html>
