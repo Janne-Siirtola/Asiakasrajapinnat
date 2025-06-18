@@ -236,3 +236,34 @@ button:hover {
   color: #555;
 }
 
+/* Info icon tooltip for form labels */
+.info-icon {
+  display: inline-block;
+  margin-left: 4px;
+  width: 1em;
+  height: 1em;
+  line-height: 1em;
+  text-align: center;
+  border: 1px solid #777;
+  border-radius: 50%;
+  font-size: 0.75em;
+  cursor: help;
+  position: relative;
+  z-index: 1;
+}
+
+.info-icon:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: pre;
+  font-size: 0.75em;
+  z-index: 1000;
+}
+
