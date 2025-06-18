@@ -14,7 +14,7 @@ os.environ.setdefault(
 )
 
 from config_page import handlers
-from config_page.exceptions import InvalidInputError
+from config_page.exceptions import InvalidInputError, ClientError
 from config_page import form_parser
 
 
@@ -27,3 +27,6 @@ def test_handle_error_returns_generic_message():
 def test_invalid_method_raises_error():
     with pytest.raises(InvalidInputError):
         form_parser.parse_form_data("method=unknown", [])
+        
+    with pytest.raises(ClientError):
+        handlers.prepare_template_context(method="unknown")
