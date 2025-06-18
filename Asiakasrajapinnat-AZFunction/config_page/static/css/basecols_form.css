@@ -46,11 +46,29 @@ h1 {
   display: flex;
   align-items: center;
   position: relative;
-  padding: 12px;
+  padding: 5px;
   border: 1px solid #9b9b9b;
   border-radius: 4px;
   background: #f7f7f7;
   margin-bottom: 10px;
+}
+.base-columns-group .form-group {
+  margin-bottom: 0;
+  margin-right: 10px;
+}
+
+.base-columns-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  padding: 0 12px 6px;
+  margin-bottom: 4px;
+}
+.base-columns-header span {
+  margin-right: 10px;
+}
+.base-columns-header .header-spacer {
+  width: 80px;
 }
 
 .base-columns-group.dragging {
