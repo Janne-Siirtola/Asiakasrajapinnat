@@ -151,6 +151,7 @@ def parse_form_data(
 
     enabled = _parse_enabled(method, parsed)
     name = parsed.get("name", [""])[0].strip().lower()
+    original_name = parsed.get("original_name", [""])[0].strip().lower()
     konserni_raw = parsed.get("konserni", [""])[0].strip()
     konserni_list = _parse_konserni_list(konserni_raw, messages)
     src_container, dest_container, file_format, file_encoding = _parse_containers(
@@ -178,6 +179,9 @@ def parse_form_data(
         extra_columns,
         exclude_list,
     )
+
+    if method == "edit_customer":
+        result["original_name"] = original_name
 
     logging.info("Parsed data for customer '%s'", name)
 

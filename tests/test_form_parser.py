@@ -126,3 +126,16 @@ def test_valid_container_names_are_accepted(monkeypatch):
     assert method == "create_customer"
     assert called["args"] == ("valid-src/", "validdest-123/")
     assert all("Invalid" not in m["message"] for m in messages)
+
+
+def test_edit_customer_parsing():
+    body = (
+        "method=edit_customer&name=newname&original_name=oldname&"
+        "konserni=1&src_container=src&dest_container=dest&"
+        "file_format=csv&file_encoding=utf-8"
+    )
+    method, result = form_parser.parse_form_data(body, [])
+
+    assert method == "edit_customer"
+    assert result["name"] == "newname"
+    assert result["original_name"] == "oldname"

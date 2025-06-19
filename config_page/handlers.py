@@ -130,8 +130,8 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
 
         try:
             method, result = parse_form_data(raw_body, messages)
-            name = result["name"] if isinstance(
-                result, dict) and "name" in result else ""
+            name = result.get("name") if isinstance(result, dict) else ""
+            original_name = result.pop("original_name", name) if isinstance(result, dict) else name
         except (InvalidInputError, json.JSONDecodeError, AzureError) as err:
             logging.error("Failed to parse POST body: %s", err)
             return func.HttpResponse(
@@ -152,12 +152,12 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         json_blob_exists = False
-        if method == "create_customer":
+        if method == "create_customer" or (method == "edit_customer" and original_name != name):
             json_blob_exists = conf_stg.blob_exists(
                 f"customer_config/{name}.json")
 
         if method in ["create_customer", "edit_customer"]:
-            if json_blob_exists and method == "create_customer":
+            if json_blob_exists and (method == "create_customer" or original_name != name):
                 logging.error(
                     "Configuration for customer '%s' already exists.", name)
                 flash(
@@ -177,6 +177,23 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                         content_type="application/json; charset=utf-8"
                     ),
                 )
+                if method == "edit_customer" and original_name != name:
+                    try:
+                        conf_stg.container_client.delete_blob(
+                            f"customer_config/{original_name}.json")
+                        logging.info(
+                            "Renamed customer '%s' to '%s'", original_name, name)
+                    except AzureError as e:
+                        logging.error(
+                            "Failed to delete old config for '%s': %s",
+                            original_name,
+                            e,
+                        )
+                        flash(
+                            messages,
+                            "error",
+                            f"Failed to remove old config '{original_name}': {e}",
+                        )
         elif method == "delete_customer":
             try:
                 conf_stg.container_client.delete_blob(

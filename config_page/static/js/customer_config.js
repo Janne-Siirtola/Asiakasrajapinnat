@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const $ = id => form.querySelector("#" + id);
   const fields = {
     name: $("name"),
+    original_name: $("original_name"),
     konserni: $("konserni"),
     src_container: $("src_container"),
     dest_container: $("dest_container"),
@@ -108,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formTitle.textContent = `Muokkaa: ${cust.name.toUpperCase()}`;
     fields.name.value            = cust.name;
+    if (fields.original_name) fields.original_name.value = cust.name;
     fields.konserni.value        = cust.konserni.join(",");
     fields.src_container.value   = (cust.source_container || "").replace("/", "");
     fields.dest_container.value  = (cust.destination_container || "").replace("/", "");

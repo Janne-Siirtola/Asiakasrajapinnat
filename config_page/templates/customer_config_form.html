@@ -77,13 +77,10 @@
 
         <!-- Customer Name (read‑only in edit) -->
         <div class="form-group">
-          <label for="name" h>Asiakkaan nimi
-          </label>
-          <input type="text" id="name" name="name"
-            {% if method == 'edit_customer' %}readonly style="color: #969696;"{% endif %}
-            placeholder="esim. yit" required>
+          <label for="name" h>Asiakkaan nimi</label>
+          <input type="text" id="name" name="name" placeholder="esim. yit" required>
           {% if method == 'edit_customer' %}
-          <small>Vain luku -tilassa muokattaessa</small>
+          <input type="hidden" id="original_name" name="original_name" value="">
           {% endif %}
         </div>
 
