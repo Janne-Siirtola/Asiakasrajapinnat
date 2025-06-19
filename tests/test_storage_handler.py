@@ -21,3 +21,15 @@ def test_move_file_to_dir():
     handler.upload_blob.assert_called_once_with("processed/file.csv", b"data", overwrite=True)
     handler.container_client.delete_blob.assert_called_once_with("in/file.csv")
 
+
+def test_blob_exists():
+    handler = storage_handler.StorageHandler.__new__(storage_handler.StorageHandler)
+    handler.container_client = MagicMock()
+    blob_client = MagicMock()
+    handler.container_client.get_blob_client.return_value = blob_client
+    blob_client.exists.return_value = True
+
+    assert handler.blob_exists("foo.json")
+    handler.container_client.get_blob_client.assert_called_once_with("foo.json")
+    blob_client.exists.assert_called_once_with()
+

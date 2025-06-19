@@ -74,6 +74,11 @@ class StorageHandler:
         blobs = self.container_client.list_blobs(name_starts_with=prefix)
         return [b.name for b in blobs if b.name.lower().endswith(".json")]
 
+    def blob_exists(self, blob_name: str) -> bool:
+        """Check if ``blob_name`` exists in this container."""
+        blob_client: BlobClient = self.container_client.get_blob_client(blob_name)
+        return blob_client.exists()
+
     def download_blob(self, blob_name: str) -> bytes:
         """Download the contents of ``blob_name`` and return it."""
         blob_client: BlobClient = self.container_client.get_blob_client(

@@ -153,8 +153,8 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
 
         json_blob_exists = False
         if method == "create_customer":
-            json_blob_exists = conf_stg.list_json_blobs(
-                prefix=f"customer_config/{name}")
+            json_blob_exists = conf_stg.blob_exists(
+                f"customer_config/{name}.json")
 
         if method in ["create_customer", "edit_customer"]:
             if json_blob_exists and method == "create_customer":
