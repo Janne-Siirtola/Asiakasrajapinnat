@@ -2,6 +2,7 @@ import ast
 import os
 import re
 import sys
+import pytz # Test that pytz is available
 
 PROJECT_DIRS = ["asiakasrajapinnat_master", "config_page"]
 
