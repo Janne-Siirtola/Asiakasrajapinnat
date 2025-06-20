@@ -71,7 +71,8 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
         .validate_concern_number()
         .drop_unmapped_columns()
         .reorder_columns()
-        .rename_and_cast_datatypes()
+        .rename_columns()
+        .cast_datatypes()
         .validate_final_df()
         .df
     )
