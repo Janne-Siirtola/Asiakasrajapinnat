@@ -1,11 +1,11 @@
 {
     "base_columns": {
-        "PRTName": {
-            "name": "Asiakasryhma",
-            "dtype": "string"
-        },
         "TAPWeightGuid": {
             "name": "TapID",
+            "dtype": "string"
+        },
+        "PRTName": {
+            "name": "Asiakasryhma",
             "dtype": "string"
         },
         "TAPAsnro": {
