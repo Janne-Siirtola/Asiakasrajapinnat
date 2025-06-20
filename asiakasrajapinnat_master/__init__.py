@@ -16,6 +16,7 @@ from .data_builder import DataBuilder
 from .data_editor import DataEditor
 from .main_config import load_main_config
 from .storage_handler import StorageHandler
+from .esrs_data_parser import EsrsDataParser
 
 
 # Silence the Blob SDK’s HTTP logs
@@ -76,6 +77,8 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
         .validate_final_df()
         .df
     )
+    
+    esrs_parser = EsrsDataParser(df_final)
 
     ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
 

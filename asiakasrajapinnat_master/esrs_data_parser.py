@@ -47,15 +47,15 @@ class EsrsDataParser:
         df_non_h = df_non_h.loc[~mask].copy()
 
         loaded_h, loaded_non_h = self.load_esrs_json()
-        datamodel_non_h = self.calculate_esrs(df_non_h)
-        datamodel_h = self.calculate_esrs(df_h)
+        datamodel_non_h = self.build_datamodel(df_non_h)
+        datamodel_h = self.build_datamodel(df_h)
 
         json_data = self.build_esrs_json(
             dm_non_h=datamodel_non_h+loaded_non_h,
             dm_h=datamodel_h+loaded_h
         )
 
-        return df_non_h, df_h, json_data
+        return df_h, json_data
 
     def load_esrs_json(self):
         ROOT = Path(__file__).resolve().parents[1]
@@ -133,9 +133,7 @@ class EsrsDataParser:
         }
         return structure
 
-    def calculate_esrs(self, df: pd.DataFrame):
-        datamap = EsrsDataModel()
-
+    def build_esrs_df(self, df: pd.DataFrame):
         loppukasiteltavat_tyypit = [
             1408, 1907, 3250, 3281, 3313, 3505, 3506, 94007,
             314079, 314310, 314322, 501407, 503401, 522300
@@ -145,57 +143,35 @@ class EsrsDataParser:
         paino = df['Paino']
         tyyppi = df['Tyyppi']
 
+        # Total waste generated
         df['recovery'] = (
             mat_hyotyaste * paino + ene_hyotyaste * paino
         ).where(~tyyppi.isin(loppukasiteltavat_tyypit), 0)
-        datamap.recovery = df['recovery'].sum()
-
         df['disposal'] = (
             paino
         ).where(tyyppi.isin(loppukasiteltavat_tyypit), 0)
-
-        datamap.disposal = df['disposal'].sum()
-
-        total_waste_generated = datamap.recovery + datamap.disposal
-
+        
+        # Recovery
         df['preparation_for_reuse'] = 0
-        datamap.preparation_for_reuse = 0
-
         df['recycling'] = (
             mat_hyotyaste * paino
         )
-        datamap.recycling = df['recycling'].sum()
-
         df['other_recovery_operations'] = (
             ene_hyotyaste * paino
         )
-        datamap.other_recovery_operations = df['other_recovery_operations'].sum(
-        )
-
-        recovery_total = (
-            datamap.preparation_for_reuse +
-            datamap.recycling +
-            datamap.other_recovery_operations
-        )
-
+        
+        # Disposal
         df['incineration'] = 0
-        datamap.incineration = 0
-
         s = ene_hyotyaste + mat_hyotyaste
-
         df['landfilling'] = (
             df['disposal']
         ).where(s == 0, 0)
-        datamap.landfilling = df['landfilling'].sum()
-
         df['other_disposal_operations'] = (
             df['disposal']
         ).where(
             (s > 0) &
             (s < 1),
             0
-        )
-        datamap.other_disposal_operations = df['other_disposal_operations'].sum(
         )
 
         df['disposal_total'] = (round(
@@ -204,16 +180,37 @@ class EsrsDataParser:
             df['landfilling'] +
             df['other_disposal_operations'], 3)
         )
+        return df
+
+    def build_datamodel(self, df: pd.DataFrame):
+        datamodel = EsrsDataModel()
+        
+        df = self.build_esrs_df(df)
+
+        # Total waste generated
+        datamodel.recovery = df['recovery'].sum()
+        datamodel.disposal = df['disposal'].sum()
+
+        # Recovery
+        datamodel.preparation_for_reuse = 0
+        datamodel.recycling = df['recycling'].sum()
+        datamodel.other_recovery_operations = df['other_recovery_operations'].sum()
+        
+        # Disposal
+        datamodel.incineration = 0
+        datamodel.landfilling = df['landfilling'].sum()
+        datamodel.other_disposal_operations = df['other_disposal_operations'].sum()
+
         disposal_total = (
-            datamap.other_recovery_operations +
-            datamap.incineration +
-            datamap.landfilling +
-            datamap.other_disposal_operations
+            datamodel.other_recovery_operations +
+            datamodel.incineration +
+            datamodel.landfilling +
+            datamodel.other_disposal_operations
         )
 
-        datamap.non_recycled = disposal_total + datamap.other_recovery_operations
+        datamodel.non_recycled = disposal_total + datamodel.other_recovery_operations
 
-        return datamap
+        return datamodel
 
     def data_to_csv(self, df: pd.DataFrame, encoding):
         return df.to_csv(index=False, encoding=encoding, sep=";", decimal=".")
