@@ -7,3 +7,9 @@ local.settings.json
 test
 .venv
 local_tests
+
+pylint_all.txt
+esrs_e5_esimerkki.json
+local_tests/results/
+*.csv
+*.xlsx
