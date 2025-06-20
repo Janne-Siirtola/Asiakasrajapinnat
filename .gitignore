@@ -1,7 +1,9 @@
 pylint_all.txt
-rajapintasiakkaat.xlsx
 esrs_e5_esimerkki.json
-local_tests/
+local_tests/results/
+*.csv
+*.xlsx
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
