@@ -1,7 +1,7 @@
 {
     "base_columns": {
         "TAPWeightGuid": {
-            "name": "TapID",
+            "name": "TapahtumaId",
             "dtype": "string"
         },
         "PRTName": {
