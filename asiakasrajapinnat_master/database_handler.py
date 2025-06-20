@@ -27,10 +27,19 @@ class DatabaseHandler:
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
-        self.base_columns = base_columns or {}
+        self.base_columns = self._filter_columns(base_columns or {})
         self._initialized = True
 
-    # -- internal helpers -------------------------------------------------
+    # -- internal helpers ------------------------------------------------- ANCHOR-likely-camaro
+    @staticmethod
+    def _filter_columns(columns: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+        """Return ``columns`` without entries whose name is 'TapahtumaId'."""
+        return {
+            key: cfg
+            for key, cfg in columns.items()
+            if cfg.get("name") != "TapahtumaId"
+        }
+
     @staticmethod
     def _sanitize(name: str) -> str:
         return name.replace("-", "_").replace(" ", "_")
@@ -50,7 +59,7 @@ class DatabaseHandler:
     # -- public API -------------------------------------------------------
     def ensure_table(self, customer: str, base_columns: Dict[str, Dict[str, str]] | None = None) -> None:
         if base_columns is not None:
-            self.base_columns.update(base_columns)
+            self.base_columns.update(self._filter_columns(base_columns))
         columns = self.base_columns
         table = self._sanitize(customer)
         existing = self._table_columns(table)

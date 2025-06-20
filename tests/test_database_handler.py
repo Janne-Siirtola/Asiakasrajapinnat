@@ -42,3 +42,19 @@ def test_upsert_and_fetch(tmp_path):
     df = db.fetch_dataframe(customer)
     assert "C" in df.columns
     assert df.loc[df["TapahtumaId"] == "3", "C"].iloc[0] == "x"
+
+
+def test_tapahtumaid_not_duplicated(tmp_path):
+    base = {
+        "TAPWeightGuid": {"name": "TapahtumaId", "dtype": "string"},
+        "A": {"name": "A", "dtype": "int"},
+    }
+    db_file = tmp_path / "test.db"
+    DatabaseHandler._instance = None  # reset singleton
+    db = DatabaseHandler(str(db_file), base_columns=base)
+    customer = "testcust"
+
+    df = pd.DataFrame({"TapahtumaId": ["1"], "A": [1]})
+    db.upsert_rows(customer, df)
+    result = db.fetch_dataframe(customer)
+    assert list(result.columns) == ["TapahtumaId", "A"]

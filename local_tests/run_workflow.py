@@ -14,12 +14,13 @@ from asiakasrajapinnat_master.customer import Customer, CustomerConfig
 from asiakasrajapinnat_master.data_builder import DataBuilder
 from asiakasrajapinnat_master.data_editor import DataEditor
 from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
+from asiakasrajapinnat_master.database_handler import DatabaseHandler
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_configs() -> Customer:
+def load_configs() -> tuple[Customer, dict]:
     """Load main and customer configs from the ``Config`` folder."""
     with open(ROOT / "Config" / "MainConfig.json", encoding="utf-8") as fh:
         main_cfg = json.load(fh)
@@ -28,15 +29,21 @@ def load_configs() -> Customer:
         cust_cfg_raw = json.load(fh)
 
     cfg = CustomerConfig(base_columns=main_cfg["base_columns"], **cust_cfg_raw)
-    return Customer(cfg)
+    return Customer(cfg), main_cfg["base_columns"]
 
 
 def run() -> Path:
     """Process the example data and save the result to the repository root."""
-    customer = load_configs()
+    customer, base_columns = load_configs()
+
+    results_dir = ROOT / "local_tests" / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    db_path = results_dir / "customer_data.db"
+    db = DatabaseHandler(str(db_path), base_columns=base_columns)
 
     # Load the sample CSV
-    sample_path = ROOT / "local_tests" / "esrs_sample2.csv"
+    sample_path = ROOT / "local_tests" / "Rajapinta_newest_malli.csv"
     df = pd.read_csv(sample_path, encoding="ISO-8859-1", delimiter=";")
     # Ensure konserni column is loaded as strings
     if "PARConcern" in df.columns:
@@ -55,25 +62,25 @@ def run() -> Path:
         .df
     )
 
+    db.upsert_rows(customer.config.name, df_final)
+    full_df = db.fetch_dataframe(customer.config.name)
+
     builder = DataBuilder(customer)
     if customer.config.file_format.lower() == "csv":
         data = builder.build_csv(df_final, encoding=customer.config.file_encoding)
-        out_path = ROOT / "local_tests" / "results" / f"tapahtumat_{customer.config.name}.csv"
+        out_path = results_dir / f"tapahtumat_{customer.config.name}.csv"
         out_path.write_text(data, encoding=customer.config.file_encoding)
     else:
         data = builder.build_json(df_final)
-        out_path = ROOT / "local_tests" / "results" / f"tapahtumat_{customer.config.name}.json"
+        out_path = results_dir / f"tapahtumat_{customer.config.name}.json"
         out_path.write_text(data, encoding=customer.config.file_encoding)
         
-    esrs_parser = EsrsDataParser(df_final)
+    esrs_parser = EsrsDataParser(full_df)
     json_data = esrs_parser.parse()
-    json_out_path = ROOT / "local_tests" / "results" / f"esrstst_{customer.config.name}.json"
+    json_out_path = results_dir / f"esrs_{customer.config.name}.json"
     json_out_path.write_text(json.dumps(json_data, indent=4), encoding=customer.config.file_encoding)
 
 
-    """ csv_data = esrs_parser.data_to_csv(json_data, encoding=customer.config.file_encoding)
-    out_path = ROOT / "local_tests" / "results" / f"esrs_{customer.config.name}.csv"
-    out_path.write_text(csv_data, encoding=customer.config.file_encoding) """
     return out_path
 
 
