@@ -94,6 +94,10 @@ class DataEditor:
                 self.df[col] = series.astype(int)
 
         return self
+
+    def rename_and_cast_datatypes(self) -> "DataEditor":
+        """Backward compatible helper used by older tests."""
+        return self.rename_columns().cast_datatypes()
     
     def calculate_esrs(self) -> "DataEditor":
         """

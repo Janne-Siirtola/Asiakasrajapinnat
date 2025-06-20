@@ -1,102 +1,106 @@
 {
     "base_columns": {
+        "PRTName": {
+            "name": "Asiakasryhma",
+            "dtype": "string"
+        },
+        "TAPWeightGuid": {
+            "name": "TapID",
+            "dtype": "string"
+        },
         "TAPAsnro": {
-            "name": "Asiakasnro", 
+            "name": "Asiakasnro",
             "dtype": "string"
         },
         "PARDName1": {
-            "name": "Tyhjennyskohde", 
+            "name": "Tyhjennyskohde",
             "dtype": "string"
         },
         "PARDName4": {
-            "name": "Osoite", 
+            "name": "Osoite",
             "dtype": "string"
         },
         "TAPPvm": {
-            "name": "Pvm", 
+            "name": "Pvm",
             "dtype": "string"
         },
         "TAPKlo": {
-            "name": "Kello", 
+            "name": "Kello",
             "dtype": "string"
         },
         "TAPTyyppi": {
-            "name": "Tyyppi", 
+            "name": "Tyyppi",
             "dtype": "int"
         },
         "TAPNimi": {
-            "name": "Nimike", 
+            "name": "Nimike",
             "dtype": "string"
         },
         "TYPTRyhma": {
-            "name": "Tuoteryhma", 
+            "name": "Tuoteryhma",
             "dtype": "string"
         },
         "TAPMaara": {
-            "name": "Maara", 
+            "name": "Maara",
             "dtype": "float",
             "decimals": 2
         },
         "TAPHinta": {
-            "name": "Hinta", 
+            "name": "Hinta",
             "dtype": "float",
             "decimals": 2
         },
         "TAPKasit": {
-            "name": "Jkmaksu", 
+            "name": "Jkmaksu",
             "dtype": "float",
             "decimals": 2
         },
         "TAPPaino": {
-            "name": "Paino", 
+            "name": "Paino",
             "dtype": "float",
             "decimals": 3
         },
         "TAPYht": {
-            "name": "Yhteensa", 
+            "name": "Yhteensa",
             "dtype": "float",
             "decimals": 2
         },
-        "TAPUrakoit": {
-            "name": "Urakoitsija", 
-            "dtype": "string"
-        },
         "TAPKierPros": {
-            "name": "Materiaalihyotyaste", 
+            "name": "Materiaalihyotyaste",
             "dtype": "float",
             "decimals": 2
         },
         "TAPHyoPros": {
-            "name": "Energiahyotyaste", 
+            "name": "Energiahyotyaste",
             "dtype": "float",
             "decimals": 2
         },
         "TAPOJHK": {
-            "name": "Kasittelytapa", 
+            "name": "Kasittelytapa",
             "dtype": "string"
         },
         "TAPJKoodi": {
-            "name": "EWCkoodi", 
+            "name": "EWCkoodi",
             "dtype": "string"
         },
         "PARConcern": {
-            "name": "Konserninumero", 
+            "name": "Konserninumero",
             "dtype": "string"
         },
         "PARMark": {
-            "name": "Viite", 
+            "name": "Viite",
             "dtype": "string"
         },
         "PARName1": {
-            "name": "Maksaja", 
+            "name": "Maksaja",
             "dtype": "string"
         },
         "TAPKaatop": {
-            "name": "VopKoodi", 
+            "name": "VopKoodi",
             "dtype": "string"
         },
         "TAPKaatopDefinition": {
-            "name": "Vastaanottopaikka", 
+            "name": "Vastaanottopaikka",
             "dtype": "string"
         }
     }

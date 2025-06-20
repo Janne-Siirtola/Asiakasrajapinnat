@@ -78,7 +78,6 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
         .df
     )
     
-    esrs_parser = EsrsDataParser(df_final)
 
     ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
 
@@ -102,6 +101,23 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     dst_stg = StorageHandler(
         customer.config.destination_container, verify_existence=True)
     dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
+
+    
+    esrs_parser = EsrsDataParser(df_final)
+    esrs_json = esrs_parser.parse()
+    esrs_blob = f"esrs_{customer.config.name}.json"
+    if dst_stg.blob_exists(esrs_blob):
+        existing = json.loads(dst_stg.download_blob(esrs_blob))
+        esrs_json = EsrsDataParser.merge_json(existing, esrs_json)
+    esrs_bytes = json.dumps(esrs_json, ensure_ascii=False).encode("utf-8")
+    dst_stg.upload_blob(
+        esrs_blob,
+        esrs_bytes,
+        content_settings=ContentSettings(
+            content_type="application/json; charset=utf-8"
+        ),
+    )
+
     logging.info("Processed customer %s successfully.", customer.config.name)
 
 

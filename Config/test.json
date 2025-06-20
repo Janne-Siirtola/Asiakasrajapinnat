@@ -8,11 +8,6 @@
     "destination_container": "testi/",
     "file_format": "csv",
     "file_encoding": "utf-8",
-    "extra_columns": {
-        "PRTName": {
-            "name": "Asiakasryhma", 
-            "dtype": "string"
-        }
-    },
+    "extra_columns": {},
     "exclude_columns": []
 }
