@@ -1,4 +1,5 @@
-import json
+"""ESRS E5-5 waste figures parser and model."""
+
 from dataclasses import dataclass, fields
 from typing import Tuple
 
@@ -30,7 +31,8 @@ class EsrsDataModel:
     def __add__(self, other: "EsrsDataModel") -> "EsrsDataModel":
         merged = EsrsDataModel()
         for f in fields(self):
-            setattr(merged, f.name, getattr(self, f.name) + getattr(other, f.name))
+            setattr(merged, f.name, getattr(
+                self, f.name) + getattr(other, f.name))
         return merged
 
 
@@ -41,13 +43,13 @@ class EsrsDataParser:
         self.df = df.copy()
 
     def _preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df[df["Paino"] != 0].copy()
         df["Materiaalihyotyaste"] = df["Materiaalihyotyaste"] / 100
         df["Energiahyotyaste"] = df["Energiahyotyaste"] / 100
         return df
 
     def _split_by_hazardous(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        mask = df["EWCkoodi"].astype(str).str.contains("*", regex=False, na=False)
+        mask = df["EWCkoodi"].astype(str).str.contains(
+            "*", regex=False, na=False)
         return df.loc[~mask].copy(), df.loc[mask].copy()
 
     def _build_model(self, df: pd.DataFrame) -> EsrsDataModel:
@@ -72,7 +74,8 @@ class EsrsDataParser:
         paino = df["Paino"]
         tyyppi = df["Tyyppi"]
 
-        recovery = ((mat + ene) * paino).where(~tyyppi.isin(loppukasiteltavat_tyypit), 0)
+        recovery = (
+            (mat + ene) * paino).where(~tyyppi.isin(loppukasiteltavat_tyypit), 0)
         disposal = paino.where(tyyppi.isin(loppukasiteltavat_tyypit), 0)
 
         model = EsrsDataModel()
@@ -84,31 +87,12 @@ class EsrsDataParser:
         model.incineration = 0.0
         mask_sum = mat + ene
         model.landfilling = disposal.where(mask_sum == 0, 0).sum()
-        model.other_disposal_operations = disposal.where((mask_sum > 0) & (mask_sum < 1), 0).sum()
+        model.other_disposal_operations = disposal.where(
+            (mask_sum > 0) & (mask_sum < 1), 0).sum()
         return model
 
     @staticmethod
-    def _model_from_section(section: dict) -> EsrsDataModel:
-        return EsrsDataModel(
-            recovery=section["totalWasteGenerated"]["recovery"],
-            disposal=section["totalWasteGenerated"]["disposal"],
-            preparation_for_reuse=section["recovery"].get("preparationForReuse", 0),
-            recycling=section["recovery"]["recycling"],
-            other_recovery_operations=section["recovery"]["otherRecoveryOperations"],
-            incineration=section["disposal"].get("incineration", 0),
-            landfilling=section["disposal"]["landfilling"],
-            other_disposal_operations=section["disposal"]["otherDisposalOperations"],
-        )
-
-    @classmethod
-    def models_from_json(cls, data: dict) -> Tuple[EsrsDataModel, EsrsDataModel]:
-        wb = data.get("wasteByHazardousness", {})
-        non_h = cls._model_from_section(wb.get("nonHazardous", {}))
-        h = cls._model_from_section(wb.get("hazardous", {}))
-        return non_h, h
-
-    @staticmethod
-    def build_json(dm_non_h: EsrsDataModel, dm_h: EsrsDataModel, unit: str = "tonnes") -> dict:
+    def build_json(dm_non_h: EsrsDataModel, dm_h: EsrsDataModel, reporting_period: str, unit: str = "tonnes") -> dict:
         def build_category(dm: EsrsDataModel) -> dict:
             total = dm.non_recycled or 1.0
             round_val = 3
@@ -136,6 +120,7 @@ class EsrsDataParser:
             }
 
         return {
+            "reportingPeriod": reporting_period,
             "unit": unit,
             "wasteByHazardousness": {
                 "nonHazardous": build_category(dm_non_h),
@@ -143,18 +128,25 @@ class EsrsDataParser:
             },
         }
 
+    def get_reporting_period(self, df: pd.DataFrame) -> str:
+        # parse your column once
+        df['Pvm_dt'] = pd.to_datetime(
+            df['Pvm'], dayfirst=True, format='%d.%m.%Y')
+
+        # get the min/max
+        oldest = df['Pvm_dt'].min()
+        newest = df['Pvm_dt'].max()
+
+        # strip off the time‑of‑day
+        oldest_date = oldest.date()
+        newest_date = newest.date()
+
+        return f"{oldest_date} - {newest_date}"
+
     def parse(self) -> dict:
         df = self._preprocess(self.df)
         non_h_df, h_df = self._split_by_hazardous(df)
         dm_non_h = self._build_model(non_h_df)
         dm_h = self._build_model(h_df)
-        return self.build_json(dm_non_h, dm_h)
-
-    @classmethod
-    def merge_json(cls, existing: dict, new: dict) -> dict:
-        old_non_h, old_h = cls.models_from_json(existing)
-        new_non_h, new_h = cls.models_from_json(new)
-        merged_non_h = old_non_h + new_non_h
-        merged_h = old_h + new_h
-        unit = existing.get("unit", new.get("unit", "tonnes"))
-        return cls.build_json(merged_non_h, merged_h, unit=unit)
+        reporting_period = self.get_reporting_period(df)
+        return self.build_json(dm_non_h, dm_h, reporting_period)

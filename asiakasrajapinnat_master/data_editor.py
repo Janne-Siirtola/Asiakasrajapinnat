@@ -1,8 +1,6 @@
 """Data cleaning and validation helpers for customer exports."""
 
-from itertools import chain
 import logging
-import numpy as np
 import pandas as pd
 
 from .customer import Customer
@@ -90,6 +88,9 @@ class DataEditor:
                 # normalize decimal separator
                 series = series.astype(str).str.replace(',', '.', regex=False)
                 self.df[col] = series.astype(float)
+                
+                decimals = self.mappings.decimals_map.get(col)
+                self.df[col] = self.df[col].round(decimals)
             elif dt.startswith('int'):
                 self.df[col] = series.astype(int)
 

@@ -2,31 +2,38 @@
     "base_columns": {
         "TAPWeightGuid": {
             "name": "TapahtumaId",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         },
         "PRTName": {
             "name": "Asiakasryhma",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         },
         "TAPAsnro": {
             "name": "Asiakasnro",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "PARDName1": {
             "name": "Tyhjennyskohde",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 1050
         },
         "PARDName4": {
             "name": "Osoite",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 1050
         },
         "TAPPvm": {
             "name": "Pvm",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "TAPKlo": {
             "name": "Kello",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "TAPTyyppi": {
             "name": "Tyyppi",
@@ -34,11 +41,13 @@
         },
         "TAPNimi": {
             "name": "Nimike",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         },
         "TYPTRyhma": {
             "name": "Tuoteryhma",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "TAPMaara": {
             "name": "Maara",
@@ -77,31 +86,38 @@
         },
         "TAPOJHK": {
             "name": "Kasittelytapa",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "TAPJKoodi": {
             "name": "EWCkoodi",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "PARConcern": {
             "name": "Konserninumero",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "PARMark": {
             "name": "Viite",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         },
         "PARName1": {
             "name": "Maksaja",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         },
         "TAPKaatop": {
             "name": "VopKoodi",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 50
         },
         "TAPKaatopDefinition": {
             "name": "Vastaanottopaikka",
-            "dtype": "string"
+            "dtype": "string",
+            "length": 255
         }
     }
 }

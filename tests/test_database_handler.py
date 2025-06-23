@@ -1,5 +1,5 @@
 import pandas as pd
-from asiakasrajapinnat_master.database_handler import DatabaseHandler
+from asiakasrajapinnat_master.database_handler import DatabaseHandler, _InMemoryDriver
 
 
 def test_upsert_and_fetch(tmp_path):
@@ -7,8 +7,9 @@ def test_upsert_and_fetch(tmp_path):
         "A": {"name": "A", "dtype": "int"},
         "B": {"name": "B", "dtype": "float"},
     }
-    db_file = tmp_path / "test.db"
-    db = DatabaseHandler(str(db_file), base_columns=base)
+    driver = _InMemoryDriver()
+    DatabaseHandler._instance = None
+    db = DatabaseHandler(base_columns=base, driver=driver)
     customer = "testcust"
 
     df1 = pd.DataFrame({
@@ -49,9 +50,9 @@ def test_tapahtumaid_not_duplicated(tmp_path):
         "TAPWeightGuid": {"name": "TapahtumaId", "dtype": "string"},
         "A": {"name": "A", "dtype": "int"},
     }
-    db_file = tmp_path / "test.db"
+    driver = _InMemoryDriver()
     DatabaseHandler._instance = None  # reset singleton
-    db = DatabaseHandler(str(db_file), base_columns=base)
+    db = DatabaseHandler(base_columns=base, driver=driver)
     customer = "testcust"
 
     df = pd.DataFrame({"TapahtumaId": ["1"], "A": [1]})

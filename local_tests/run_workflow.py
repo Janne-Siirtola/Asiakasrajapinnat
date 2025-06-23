@@ -1,21 +1,27 @@
 """Run the asiakasrajapinnat_master workflow using local example data."""
 
 from __future__ import annotations
+from asiakasrajapinnat_master.database_handler import DatabaseHandler
+from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
+from asiakasrajapinnat_master.data_editor import DataEditor
+from asiakasrajapinnat_master.data_builder import DataBuilder
+from asiakasrajapinnat_master.customer import Customer, CustomerConfig
 
 import json
+import os
 from pathlib import Path
 import sys
+import logging
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from asiakasrajapinnat_master.customer import Customer, CustomerConfig
-from asiakasrajapinnat_master.data_builder import DataBuilder
-from asiakasrajapinnat_master.data_editor import DataEditor
-from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
-from asiakasrajapinnat_master.database_handler import DatabaseHandler
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,15 +38,50 @@ def load_configs() -> tuple[Customer, dict]:
     return Customer(cfg), main_cfg["base_columns"]
 
 
-def run() -> Path:
+def read_local_settings() -> dict:
+    """Read local.settings.json to get environment variables."""
+    settings_path = ROOT / "local.settings.json"
+    if not settings_path.exists():
+        raise FileNotFoundError(
+            f"Local settings file not found: {settings_path}")
+
+    with open(settings_path, encoding="utf-8") as fh:
+        return json.load(fh).get("Values", {})
+
+
+def filter_month(df, month: int, year: int = 2025) -> pd.DataFrame:
+    # 1) Parse your Pvm column (if you haven’t already):
+    df['Pvm_dt'] = pd.to_datetime(
+        df['Pvm'],
+        dayfirst=True,      # since your dates are "DD.MM.YYYY"
+        format='%d.%m.%Y',
+        errors='coerce'
+    )
+
+    # 2) Choose the month you want (1 = Jan, …, 12 = Dec)
+    selected_month = month
+
+    # 3) Filter to year == 2025 AND month == selected_month
+    df_filtered = df[
+        (df['Pvm_dt'].dt.year == year) &
+        (df['Pvm_dt'].dt.month == selected_month)
+    ].copy()
+
+    # (optional) drop the helper datetime column if you like
+    df_filtered.drop(columns='Pvm_dt', inplace=True)
+
+    return df_filtered
+
+
+def run():
     """Process the example data and save the result to the repository root."""
     customer, base_columns = load_configs()
 
+    local_settings = read_local_settings()
+    os.environ.update(local_settings)
+
     results_dir = ROOT / "local_tests" / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
-
-    db_path = results_dir / "customer_data.db"
-    db = DatabaseHandler(str(db_path), base_columns=base_columns)
 
     # Load the sample CSV
     sample_path = ROOT / "local_tests" / "Rajapinta_newest_malli.csv"
@@ -62,28 +103,35 @@ def run() -> Path:
         .df
     )
 
+    df_final = filter_month(df_final, month=5, year=2025)
+
+    db = DatabaseHandler(base_columns=base_columns, local_test=True)
     db.upsert_rows(customer.config.name, df_final)
     full_df = db.fetch_dataframe(customer.config.name)
 
+    out_path = results_dir / f"TESTST.csv"
+    out_path.write_text(full_df.to_csv(
+        index=False, encoding=customer.config.file_encoding, sep=";"), encoding=customer.config.file_encoding)
+
     builder = DataBuilder(customer)
     if customer.config.file_format.lower() == "csv":
-        data = builder.build_csv(df_final, encoding=customer.config.file_encoding)
+        data = builder.build_csv(
+            df_final, encoding=customer.config.file_encoding)
         out_path = results_dir / f"tapahtumat_{customer.config.name}.csv"
         out_path.write_text(data, encoding=customer.config.file_encoding)
     else:
         data = builder.build_json(df_final)
         out_path = results_dir / f"tapahtumat_{customer.config.name}.json"
         out_path.write_text(data, encoding=customer.config.file_encoding)
-        
+
     esrs_parser = EsrsDataParser(full_df)
     json_data = esrs_parser.parse()
     json_out_path = results_dir / f"esrs_{customer.config.name}.json"
-    json_out_path.write_text(json.dumps(json_data, indent=4), encoding=customer.config.file_encoding)
+    json_out_path.write_text(json.dumps(
+        json_data, indent=4), encoding=customer.config.file_encoding)
 
-
-    return out_path
+    return
 
 
 if __name__ == "__main__":
-    output = run()
-    print(f"Result written to {output}")
+    run()
