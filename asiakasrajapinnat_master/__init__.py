@@ -91,19 +91,20 @@ def process_customer(
     # all needed columns are present in the database.
     df_final = editor.drop_excluded_columns()
 
-    ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
+    ts = get_timestamp(strftime="%Y-%m-%d_%H%M")
 
     builder = DataBuilder(customer)
+    blob_name_base = f"tapahtumat_{ts}"
     if customer.config.file_format.lower() == "csv":
         data = builder.build_csv(
             df_final, encoding=customer.config.file_encoding)
-        blob_name = f"tapahtumat_{customer.config.name}_{ts}.csv"
+        blob_name = blob_name_base + ".csv"
         content_settings = ContentSettings(
             content_type=f"text/csv; charset={customer.config.file_encoding}"
         )
     elif customer.config.file_format.lower() == "json":
         data = builder.build_json(df_final)
-        blob_name = f"tapahtumat_{customer.config.name}_{ts}.json"
+        blob_name = blob_name_base + ".json"
         content_settings = ContentSettings(
             content_type=f"application/octet-stream; charset={customer.config.file_encoding}"
         )
@@ -114,7 +115,7 @@ def process_customer(
         customer.config.destination_container, verify_existence=True)
     dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
 
-    esrs_blob = f"esrs_{customer.config.name}.json"
+    esrs_blob = f"esrs_report.json"
     esrs_bytes = json.dumps(esrs_json, ensure_ascii=False).encode("utf-8")
     dst_stg.upload_blob(
         esrs_blob,

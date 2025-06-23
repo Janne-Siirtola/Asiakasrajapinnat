@@ -45,4 +45,10 @@ class DataBuilder:
 
     def build_csv(self, df_final: pd.DataFrame, encoding: str) -> str:
         """Return the dataframe in CSV format using the given encoding."""
-        return df_final.to_csv(index=False, encoding=encoding, sep=";", decimal=".")
+        return df_final.to_csv(
+            index=False,
+            encoding=encoding,
+            sep=";",
+            decimal=".",
+            lineterminator="\n",
+        )

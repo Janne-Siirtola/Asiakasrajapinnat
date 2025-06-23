@@ -112,7 +112,7 @@ def run():
         .df
     )
 
-    df_final = filter_month(df_final, month=12, year=2024, exclude=True)
+    #df_final = filter_month(df_final, month=12, year=2024, exclude=True)
 
     db = DatabaseHandler(base_columns=base_columns, local_test=True)
     db.upsert_rows(customer.config.name, df_final)
