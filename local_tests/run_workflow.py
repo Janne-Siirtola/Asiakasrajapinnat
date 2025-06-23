@@ -18,8 +18,6 @@ from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
 from asiakasrajapinnat_master.database_handler import DatabaseHandler
 
 
-
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s"

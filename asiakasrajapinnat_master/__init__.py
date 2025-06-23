@@ -70,7 +70,7 @@ def process_customer(
         return
 
     editor = DataEditor(df=df, customer=customer)
-    df_final = (
+    df_edited = (
         editor.delete_row(0)
         .validate_concern_number()
         .drop_unmapped_columns()
@@ -82,14 +82,16 @@ def process_customer(
         .df
     )
 
-    db.upsert_rows(customer.config.name, df_final)
-    full_df = db.fetch_dataframe(customer.config.name)
-    esrs_parser = EsrsDataParser(full_df)
+    # Upsert the edited DataFrame to the database
+    # And fetch all rows for ESRS parsing
+    db.upsert_rows(customer.config.name, df_edited)
+    df_fetchall = db.fetch_dataframe(customer.config.name)
+    esrs_parser = EsrsDataParser(df_fetchall)
     esrs_json = esrs_parser.parse()
 
     # Handle excluded base columns after upserting so
     # all needed columns are present in the database.
-    df_final = editor.drop_excluded_columns()
+    df_final = editor.drop_excluded_columns(df_edited)
 
     ts = get_timestamp(strftime="%Y-%m-%d_%H%M")
 
