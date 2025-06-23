@@ -1,11 +1,6 @@
 """Run the asiakasrajapinnat_master workflow using local example data."""
 
 from __future__ import annotations
-from asiakasrajapinnat_master.database_handler import DatabaseHandler
-from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
-from asiakasrajapinnat_master.data_editor import DataEditor
-from asiakasrajapinnat_master.data_builder import DataBuilder
-from asiakasrajapinnat_master.customer import Customer, CustomerConfig
 
 import json
 import os
@@ -16,6 +11,13 @@ import logging
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from asiakasrajapinnat_master.customer import Customer, CustomerConfig
+from asiakasrajapinnat_master.data_builder import DataBuilder
+from asiakasrajapinnat_master.data_editor import DataEditor
+from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
+from asiakasrajapinnat_master.database_handler import DatabaseHandler
+
+
 
 
 logging.basicConfig(
@@ -49,7 +51,7 @@ def read_local_settings() -> dict:
         return json.load(fh).get("Values", {})
 
 
-def filter_month(df, month: int, year: int = 2025) -> pd.DataFrame:
+def filter_month(df, month: int, year: int = 2025, exclude: bool = False) -> pd.DataFrame:
     # 1) Parse your Pvm column (if you haven’t already):
     df['Pvm_dt'] = pd.to_datetime(
         df['Pvm'],
@@ -62,12 +64,18 @@ def filter_month(df, month: int, year: int = 2025) -> pd.DataFrame:
     selected_month = month
 
     # 3) Filter to year == 2025 AND month == selected_month
-    df_filtered = df[
-        (df['Pvm_dt'].dt.year == year) &
-        (df['Pvm_dt'].dt.month == selected_month)
-    ].copy()
+    if not exclude:
+        df_filtered = df[
+            (df['Pvm_dt'].dt.year == year) &
+            (df['Pvm_dt'].dt.month == selected_month)
+        ].copy()
+    else:
+        df_filtered = df[
+            ((df['Pvm_dt'].dt.year != year) &
+             (df['Pvm_dt'].dt.month != selected_month))
+        ].copy()
 
-    # (optional) drop the helper datetime column if you like
+    # drop the helper datetime column
     df_filtered.drop(columns='Pvm_dt', inplace=True)
 
     return df_filtered
@@ -97,13 +105,14 @@ def run():
         .validate_concern_number()
         .drop_unmapped_columns()
         .reorder_columns()
-        .rename_columns()
-        .cast_datatypes()
+        .rename_and_cast_datatypes()
+        .format_date_and_time()
+        .normalize_null_values()
         .validate_final_df()
         .df
     )
 
-    df_final = filter_month(df_final, month=5, year=2025)
+    df_final = filter_month(df_final, month=12, year=2024, exclude=True)
 
     db = DatabaseHandler(base_columns=base_columns, local_test=True)
     db.upsert_rows(customer.config.name, df_final)

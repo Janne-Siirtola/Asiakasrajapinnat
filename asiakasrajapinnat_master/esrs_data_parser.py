@@ -28,13 +28,6 @@ class EsrsDataModel:
             + self.other_disposal_operations
         )
 
-    def __add__(self, other: "EsrsDataModel") -> "EsrsDataModel":
-        merged = EsrsDataModel()
-        for f in fields(self):
-            setattr(merged, f.name, getattr(
-                self, f.name) + getattr(other, f.name))
-        return merged
-
 
 class EsrsDataParser:
     """Compute ESRS E5-5 waste figures from a DataFrame."""
@@ -53,30 +46,20 @@ class EsrsDataParser:
         return df.loc[~mask].copy(), df.loc[mask].copy()
 
     def _build_model(self, df: pd.DataFrame) -> EsrsDataModel:
-        loppukasiteltavat_tyypit = [
-            1408,
-            1907,
-            3250,
-            3281,
-            3313,
-            3505,
-            3506,
-            94007,
-            314079,
-            314310,
-            314322,
-            501407,
-            503401,
-            522300,
+        tuoteryhmat_loppukasittely = [
+            "AS",  # Asbesti
+            "KAA",  # Kaatopaikkajate (sis. lasikuitu)
+            "VI"  # Villa
         ]
+
         mat = df["Materiaalihyotyaste"]
         ene = df["Energiahyotyaste"]
         paino = df["Paino"]
-        tyyppi = df["Tyyppi"]
+        tuoteryhma = df["Tuoteryhma"]
 
         recovery = (
-            (mat + ene) * paino).where(~tyyppi.isin(loppukasiteltavat_tyypit), 0)
-        disposal = paino.where(tyyppi.isin(loppukasiteltavat_tyypit), 0)
+            (mat + ene) * paino).where(~tuoteryhma.isin(tuoteryhmat_loppukasittely), 0)
+        disposal = paino.where(tuoteryhma.isin(tuoteryhmat_loppukasittely), 0)
 
         model = EsrsDataModel()
         model.recovery = recovery.sum()
@@ -86,7 +69,8 @@ class EsrsDataParser:
         model.other_recovery_operations = (ene * paino).sum()
         model.incineration = 0.0
         mask_sum = mat + ene
-        model.landfilling = disposal.where(mask_sum == 0, 0).sum()
+        model.landfilling = disposal.where(
+            (mask_sum == 0.0) | (mask_sum == 1.0), 0).sum()
         model.other_disposal_operations = disposal.where(
             (mask_sum > 0) & (mask_sum < 1), 0).sum()
         return model
@@ -113,7 +97,7 @@ class EsrsDataParser:
                 },
                 "nonRecycled": {
                     "weight": round(dm.non_recycled, round_val),
-                    "percentage": round(dm.non_recycled / (dm.recovery + dm.disposal) * 100, round_val)
+                    "percentage": round(dm.non_recycled / (dm.recovery + dm.disposal) * 100, 2)
                     if (dm.recovery + dm.disposal) != 0
                     else 0,
                 },
@@ -131,7 +115,7 @@ class EsrsDataParser:
     def get_reporting_period(self, df: pd.DataFrame) -> str:
         # parse your column once
         df['Pvm_dt'] = pd.to_datetime(
-            df['Pvm'], dayfirst=True, format='%d.%m.%Y')
+            df['Pvm'], dayfirst=True, format='%Y-%m-%d')
 
         # get the min/max
         oldest = df['Pvm_dt'].min()

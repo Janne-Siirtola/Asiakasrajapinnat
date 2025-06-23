@@ -1,6 +1,7 @@
 """Data cleaning and validation helpers for customer exports."""
 
 import logging
+import numpy as np
 import pandas as pd
 
 from .customer import Customer
@@ -62,15 +63,11 @@ class DataEditor:
         self.df = self.df[ordered]
         return self
 
-    def rename_columns(self) -> "DataEditor":
-        """Rename columns according to the mapping."""
-        self.df = self.df.rename(columns=self.mappings.rename_map)
-        return self
-
-    def cast_datatypes(self) -> "DataEditor":
+    def rename_and_cast_datatypes(self) -> "DataEditor":
         """
         Cast the DataFrame columns to their specified types and round them if necessary.
         """
+        self.df = self.df.rename(columns=self.mappings.rename_map)
 
         valid_dtypes = {
             col: dt
@@ -88,114 +85,37 @@ class DataEditor:
                 # normalize decimal separator
                 series = series.astype(str).str.replace(',', '.', regex=False)
                 self.df[col] = series.astype(float)
-                
+
                 decimals = self.mappings.decimals_map.get(col)
-                self.df[col] = self.df[col].round(decimals)
+                if decimals is not None:
+                    self.df[col] = self.df[col].round(decimals)
             elif dt.startswith('int'):
                 self.df[col] = series.astype(int)
 
         return self
 
-    def rename_and_cast_datatypes(self) -> "DataEditor":
-        """Backward compatible helper used by older tests."""
-        return self.rename_columns().cast_datatypes()
+
+    def format_date_and_time(self) -> "DataEditor":
+        """Normalize ``Pvm`` and ``Kello`` columns to ISO formats."""
+        def fmt_time(t) -> (str | None):
+            """Format time values to HH:MM or return ``None`` if empty."""
+            if pd.isna(t) or str(t).lower() == "nan":
+                return None
+            s = str(t)
+            # ensure leading zero, e.g. “8:5” → “08:05”
+            parts = s.split(":")
+            return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+
+        self.df["Pvm"] = (
+            pd.to_datetime(self.df["Pvm"], dayfirst=True)
+            .dt.strftime("%Y-%m-%d")
+        )
+        self.df["Kello"] = self.df["Kello"].apply(fmt_time)
+        return self
     
-    def calculate_esrs(self) -> "DataEditor":
-        """
-        Calculate the ESRs (European Single Procurement Document) for the DataFrame.
-        This is a placeholder for actual ESR calculation logic.
-        """
-        
-        df = self.df
-        mat_hyotyaste = df['Materiaalihyotyaste']
-        ene_hyotyaste = df['Energiahyotyaste']
-        paino = df['Paino']
-        jatetyyppi = df['JateTyyppi']
-        
-        add_to_allowed = []
-        
-        a1 = '37a_hyodyntaminen'
-        df[a1] = (
-            ((mat_hyotyaste * paino) + (ene_hyotyaste * paino)) / 100
-        ).where((jatetyyppi.isin([0, 1])) & (paino >= 0), 0)  # If JateTyyppi is 1, use the formula
-        add_to_allowed.append(a1)
-
-        a2 = '37a_loppukasittely'
-        df[a2] = (
-            (mat_hyotyaste * paino) + (ene_hyotyaste * paino) / 100
-        ).where((jatetyyppi == 2) & (paino >= 0), 0) # VARMISTA TÄMÄ OLLILTA
-        add_to_allowed.append(a2)
-
-        a_yht = '37a_yhteensa'
-        df[a_yht] = (
-            df[a1] + df[a2]
-        )
-        add_to_allowed.append(a_yht)
-
-        # ------- 37b -------
-        
-        b1 = '37b_valmistelu_uudelleenkäyttöön'
-        df[b1] = 0 # Placeholder for actual calculation
-        add_to_allowed.append(b1)
-
-        b2 = '37b_kierratys'
-        df[b2] = (
-            mat_hyotyaste * paino / 100
-        ).where (paino >= 0, 0)
-        add_to_allowed.append(b2)
-
-        b3 = '37b_muut_hyodyntamistoimet'
-        df[b3] = (
-            ene_hyotyaste * paino / 100
-        ).where (paino >= 0, 0)
-        add_to_allowed.append(b3)
-
-        b_yht = '37b_yhteensa'
-        df[b_yht] = (
-            df[b1] +
-            df[b2] +
-            df[b3]
-        )
-        add_to_allowed.append(b_yht)
-
-        # -------- 37c -------
-        c1 = '37c_poltto'
-        df[c1] = 0
-        add_to_allowed.append(c1)
-        
-        c2 = '37c_kaatopaikka'
-        df[c2] = 0
-        add_to_allowed.append(c2)
-        
-        c3 = '37c_muu_loppukasittely'
-        df[c3] = 0
-        add_to_allowed.append(c3)
-        
-        c_yht = '37c_yhteensa'
-        df[c_yht] = (
-            df[c1] +
-            df[c2] +
-            df[c3]
-        )
-        add_to_allowed.append(c_yht)
-
-        # -------- 37d -------
-        d1 = '37d_kokonaismaara'
-        df[d1] = (
-            df[b3] + df[c_yht]
-        )
-        add_to_allowed.append(d1)
-        
-        d2 = '37d_osuus'
-        df[d2] = (
-            df[d1] / df[a_yht]
-        ).where(df[a_yht] > 0, 0)  # Avoid division by zero
-        add_to_allowed.append(d2)
-
-        for col in add_to_allowed:
-            if col not in self.mappings.allowed_columns:
-                self.mappings.allowed_columns[col] = col
-        
+    def normalize_null_values(self) -> "DataEditor":
+        """Normalize null values in the DataFrame."""
+        self.df = self.df.replace({np.nan: None})
         return self
 
     def validate_final_df(self) -> "DataEditor":
@@ -255,3 +175,12 @@ class DataEditor:
             )
 
         return self
+
+    def drop_excluded_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop excluded columns from the DataFrame."""
+        if self.customer.exclude_columns:
+            logging.info(
+                "Dropping excluded columns: %s", self.customer.exclude_columns)
+            df.drop(columns=self.customer.exclude_columns,
+                    errors='ignore', inplace=True)
+        return df

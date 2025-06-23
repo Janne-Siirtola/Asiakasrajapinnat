@@ -75,16 +75,21 @@ def process_customer(
         .validate_concern_number()
         .drop_unmapped_columns()
         .reorder_columns()
-        .rename_columns()
-        .cast_datatypes()
+        .rename_and_cast_datatypes()
+        .format_date_and_time()
+        .normalize_null_values()
         .validate_final_df()
         .df
     )
-    
+
     db.upsert_rows(customer.config.name, df_final)
     full_df = db.fetch_dataframe(customer.config.name)
     esrs_parser = EsrsDataParser(full_df)
     esrs_json = esrs_parser.parse()
+
+    # Handle excluded base columns after upserting so
+    # all needed columns are present in the database.
+    df_final = editor.drop_excluded_columns()
 
     ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
 
