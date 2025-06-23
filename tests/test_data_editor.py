@@ -14,6 +14,8 @@ def make_editor(invalid=False):
         "PARConcern": {"name": "Konserninumero", "dtype": "string"},
         "A": {"name": "ValueA", "dtype": "float"},
         "B": {"name": "ValueB", "dtype": "string"},
+        "Pvm": {"name": "Pvm", "dtype": "string"},
+        "Kello": {"name": "Kello", "dtype": "string"},
     }
     cfg = CustomerConfig(
         name="test",
@@ -31,6 +33,8 @@ def make_editor(invalid=False):
         "PARConcern": ["100", "100" if not invalid else "999", "200"],
         "A": ["1,5", "2,5", "3,5"],
         "B": ["x", "y", "z"],
+        "Pvm": ["01.12.2023", "02.12.2023", None],
+        "Kello": ["08:00", "8:5", "16:30"],
         "Unused": [1, 2, 3],
     })
     return DataEditor(df, customer)
@@ -44,6 +48,8 @@ def test_data_editor_processing():
         .drop_unmapped_columns()
         .reorder_columns()
         .rename_and_cast_datatypes()
+        .format_date_and_time()
+        .normalize_null_values()
         .validate_final_df()
         .df
     )
@@ -51,6 +57,8 @@ def test_data_editor_processing():
         "Konserninumero": ["100", "200"],
         "ValueA": [2.5, 3.5],
         "ValueB": ["y", "z"],
+        "Pvm": ["2023-12-02", None],
+        "Kello": ["08:05", "16:30"],
     })
     pd.testing.assert_frame_equal(final.reset_index(drop=True), expected)
 
