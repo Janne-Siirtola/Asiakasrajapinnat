@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 from asiakasrajapinnat_master.database_handler import DatabaseHandler
 
 
@@ -96,3 +97,12 @@ def test_tapahtumaid_not_duplicated(tmp_path):
     db.upsert_rows(customer, df)
     result = db.fetch_dataframe(customer)
     assert list(result.columns) == ["TapahtumaId", "A"]
+
+def test_upsert_rows_requires_tapahtumaid():
+    driver = _FakeDriver()
+    DatabaseHandler._instance = None
+    db = DatabaseHandler(base_columns={}, driver=driver)
+    customer = "testcust"
+    df = pd.DataFrame({"A": [1], "Paino": [1]})
+    with pytest.raises(ValueError):
+        db.upsert_rows(customer, df)

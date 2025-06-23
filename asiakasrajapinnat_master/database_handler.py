@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from typing import Dict, List
 
 import numpy as np
@@ -15,6 +16,8 @@ from urllib import parse
 
 class DatabaseHandler:
     """Singleton wrapper around an Azure SQL database."""
+
+    logger = logging.getLogger(__name__)
 
     _instance: "DatabaseHandler | None" = None
 
@@ -34,6 +37,7 @@ class DatabaseHandler:
             return
         if driver is not None:
             self.driver = driver
+            self.logger.info("Initialized DatabaseHandler with external driver")
         else:
             sa = importlib.import_module("sqlalchemy")
             server = os.getenv("SQL_SERVER")
@@ -57,11 +61,13 @@ class DatabaseHandler:
                 url=f"mssql+pyodbc:///?odbc_connect={params}",
                 fast_executemany=True,
             )
+            self.logger.info("Database engine created for server %s", server)
             self.schema = "esrs"
             self.sa = sa
             self.driver = self
         self.base_columns = self._filter_columns(base_columns or {})
         self._initialized = True
+        self.logger.info("DatabaseHandler initialized")
 
     # -- internal helpers -------------------------------------------------
     @staticmethod
@@ -151,15 +157,19 @@ class DatabaseHandler:
         engine = self.engine
 
         df_clean = df.where(pd.notnull(df), None)
-        df_clean.to_sql(
-            name=staging,
-            con=engine,
-            schema=schema,
-            if_exists="replace",
-            index=False,
-            method=None,
-            chunksize=2000,
-        )
+        try:
+            df_clean.to_sql(
+                name=staging,
+                con=engine,
+                schema=schema,
+                if_exists="replace",
+                index=False,
+                method=None,
+                chunksize=2000,
+            )
+        except Exception as err:
+            self.logger.exception("Failed to load staging table %s: %s", staging, err)
+            raise
 
         target = f"[{schema}].[{table_name}]"
         src = f"[{schema}].[{staging}]"
@@ -184,16 +194,25 @@ class DatabaseHandler:
             VALUES ({src_cols});
         """
 
-        with engine.begin() as conn:
-            conn.execute(self.sa.text(merge_sql))
-            conn.execute(self.sa.text(f"DROP TABLE {schema}.{staging}"))
+        try:
+            with engine.begin() as conn:
+                conn.execute(self.sa.text(merge_sql))
+                conn.execute(self.sa.text(f"DROP TABLE {schema}.{staging}"))
+            self.logger.info("Upserted %d rows into table %s", len(df), table_name)
+        except Exception as err:
+            self.logger.exception("Failed to upsert into table %s: %s", table_name, err)
+            raise
 
     def _fetch_dataframe_sql(self, table_name: str) -> pd.DataFrame:
-        df = pd.read_sql(
-            sql=f"SELECT * FROM [{self.schema}].[{table_name}]",
-            con=self.engine,
-        )
-        return df
+        try:
+            df = pd.read_sql(
+                sql=f"SELECT * FROM [{self.schema}].[{table_name}]",
+                con=self.engine,
+            )
+            return df
+        except Exception as err:
+            self.logger.exception("Failed to fetch data from table %s: %s", table_name, err)
+            raise
 
     # -- public API -------------------------------------------------------
     def ensure_table(
@@ -205,10 +224,15 @@ class DatabaseHandler:
             self.base_columns.update(self._filter_columns(base_columns))
         columns = self.base_columns
         table = self._sanitize(customer)
-        if self.driver is self:
-            self._ensure_table_sql(table, columns)
-        else:
-            self.driver.ensure_table(table, columns)
+        try:
+            if self.driver is self:
+                self._ensure_table_sql(table, columns)
+            else:
+                self.driver.ensure_table(table, columns)
+            self.logger.info("Ensured table %s exists", table)
+        except Exception as err:
+            self.logger.exception("Failed to ensure table %s: %s", table, err)
+            raise
         
     def upsert_rows(
         self,
@@ -217,18 +241,33 @@ class DatabaseHandler:
     ) -> None:
         table = self._sanitize(customer)
         if "TapahtumaId" not in df.columns:
+            self.logger.error("DataFrame missing required 'TapahtumaId' column")
             raise ValueError("DataFrame must contain 'TapahtumaId' column.")
-        self.ensure_table(customer=customer)
-        df = df[df["Paino"] != 0].copy()
-        if self.driver is self:
-            self._upsert_with_staging(table_name=table, df=df)
-        else:
-            self.driver.upsert_with_staging(table_name=table, df=df)
+        try:
+            self.ensure_table(customer=customer)
+            df = df[df["Paino"] != 0].copy()
+            if self.driver is self:
+                self._upsert_with_staging(table_name=table, df=df)
+            else:
+                self.driver.upsert_with_staging(table_name=table, df=df)
+        except Exception as err:
+            self.logger.exception(
+                "Failed to upsert rows for customer %s: %s", customer, err
+            )
+            raise
         
     def fetch_dataframe(self, customer: str) -> pd.DataFrame:
         table = self._sanitize(customer)
-        if self.driver is self:
-            return self._fetch_dataframe_sql(table_name=table)
-        return self.driver.fetch_dataframe(table_name=table)
+        try:
+            if self.driver is self:
+                df = self._fetch_dataframe_sql(table_name=table)
+            else:
+                df = self.driver.fetch_dataframe(table_name=table)
+            return df
+        except Exception as err:
+            self.logger.exception(
+                "Failed to fetch dataframe for customer %s: %s", customer, err
+            )
+            raise
 
 

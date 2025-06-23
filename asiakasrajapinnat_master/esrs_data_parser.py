@@ -1,7 +1,9 @@
 """ESRS E5-5 waste figures parser and model."""
 
-from dataclasses import dataclass, fields
-from typing import Tuple
+from dataclasses import dataclass
+from typing import Tuple, Iterable
+
+import logging
 
 import pandas as pd
 
@@ -32,8 +34,26 @@ class EsrsDataModel:
 class EsrsDataParser:
     """Compute ESRS E5-5 waste figures from a DataFrame."""
 
+    logger = logging.getLogger(__name__)
+    REQUIRED_COLUMNS: Iterable[str] = (
+        "Materiaalihyotyaste",
+        "Energiahyotyaste",
+        "EWCkoodi",
+        "Tuoteryhma",
+        "Paino",
+        "Pvm",
+    )
+
     def __init__(self, df: pd.DataFrame) -> None:
         self.df = df.copy()
+
+    def _validate_columns(self, df: pd.DataFrame) -> None:
+        missing = [c for c in self.REQUIRED_COLUMNS if c not in df.columns]
+        if missing:
+            self.logger.error("Missing required columns: %s", missing)
+            raise ValueError(
+                "Missing required columns: " + ", ".join(missing)
+            )
 
     def _preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         df["Materiaalihyotyaste"] = df["Materiaalihyotyaste"] / 100
@@ -128,9 +148,16 @@ class EsrsDataParser:
         return f"{oldest_date} - {newest_date}"
 
     def parse(self) -> dict:
-        df = self._preprocess(self.df)
-        non_h_df, h_df = self._split_by_hazardous(df)
-        dm_non_h = self._build_model(non_h_df)
-        dm_h = self._build_model(h_df)
-        reporting_period = self.get_reporting_period(df)
-        return self.build_json(dm_non_h, dm_h, reporting_period)
+        self.logger.info("Starting ESRS data parsing")
+        try:
+            self._validate_columns(self.df)
+            df = self._preprocess(self.df)
+            non_h_df, h_df = self._split_by_hazardous(df)
+            dm_non_h = self._build_model(non_h_df)
+            dm_h = self._build_model(h_df)
+            reporting_period = self.get_reporting_period(df)
+            self.logger.info("ESRS data parsed successfully")
+            return self.build_json(dm_non_h, dm_h, reporting_period)
+        except Exception as err:
+            self.logger.exception("Failed to parse ESRS data: %s", err)
+            raise
