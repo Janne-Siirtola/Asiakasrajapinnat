@@ -2,7 +2,6 @@
 
 import json
 import logging
-import traceback
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs
 

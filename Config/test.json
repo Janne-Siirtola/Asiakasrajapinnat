@@ -1,18 +1,13 @@
 {
     "enabled": true,
-    "name": "yit",
+    "name": "test",
     "konserni": [
         2208
     ],
     "source_container": "testi/",
     "destination_container": "testi/",
-    "file_format": "json",
+    "file_format": "csv",
     "file_encoding": "utf-8",
-    "extra_columns": {
-        "PRTName": {
-            "name": "Asiakasryhma", 
-            "dtype": "string"
-        }
-    },
+    "extra_columns": {},
     "exclude_columns": []
 }

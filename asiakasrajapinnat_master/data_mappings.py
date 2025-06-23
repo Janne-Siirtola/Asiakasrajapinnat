@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import Dict, Union
 
 
+
+
 @dataclass
 class DataMappings:
     """Container for DataEditor mapping configuration."""

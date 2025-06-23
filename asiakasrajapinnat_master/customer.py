@@ -2,8 +2,8 @@
 
 import io
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, Optional, Set, Union
+from dataclasses import dataclass
+from typing import Dict, Optional, Set
 
 import pandas as pd
 from .storage_handler import StorageHandler
@@ -35,10 +35,6 @@ class Customer:
 
         self.base_columns = config.base_columns.copy()
         self.exclude_columns = config.exclude_columns or []
-
-        if self.exclude_columns:
-            for c in self.exclude_columns:
-                self.base_columns.pop(c)
 
         self.mappings = DataMappings()
 

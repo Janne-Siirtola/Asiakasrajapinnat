@@ -1,6 +1,7 @@
 """Data cleaning and validation helpers for customer exports."""
 
 import logging
+import numpy as np
 import pandas as pd
 
 from .customer import Customer
@@ -66,10 +67,8 @@ class DataEditor:
         """
         Cast the DataFrame columns to their specified types and round them if necessary.
         """
-        # 1) rename
         self.df = self.df.rename(columns=self.mappings.rename_map)
 
-        # 2) cast datatypes
         valid_dtypes = {
             col: dt
             for col, dt in self.mappings.dtype_map.items()
@@ -87,6 +86,36 @@ class DataEditor:
                 series = series.astype(str).str.replace(',', '.', regex=False)
                 self.df[col] = series.astype(float)
 
+                decimals = self.mappings.decimals_map.get(col)
+                if decimals is not None:
+                    self.df[col] = self.df[col].round(decimals)
+            elif dt.startswith('int'):
+                self.df[col] = series.astype(int)
+
+        return self
+
+
+    def format_date_and_time(self) -> "DataEditor":
+        """Normalize ``Pvm`` and ``Kello`` columns to ISO formats."""
+        def fmt_time(t) -> (str | None):
+            """Format time values to HH:MM or return ``None`` if empty."""
+            if pd.isna(t) or str(t).lower() == "nan":
+                return None
+            s = str(t)
+            # ensure leading zero, e.g. “8:5” → “08:05”
+            parts = s.split(":")
+            return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+
+        self.df["Pvm"] = (
+            pd.to_datetime(self.df["Pvm"], dayfirst=True)
+            .dt.strftime("%Y-%m-%d")
+        )
+        self.df["Kello"] = self.df["Kello"].apply(fmt_time)
+        return self
+    
+    def normalize_null_values(self) -> "DataEditor":
+        """Normalize null values in the DataFrame."""
+        self.df = self.df.replace({np.nan: None})
         return self
 
     def validate_final_df(self) -> "DataEditor":
@@ -146,3 +175,12 @@ class DataEditor:
             )
 
         return self
+
+    def drop_excluded_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop excluded columns from the DataFrame."""
+        if self.customer.exclude_columns:
+            logging.info(
+                "Dropping excluded columns: %s", self.customer.exclude_columns)
+            df.drop(columns=self.customer.exclude_columns,
+                    errors='ignore', inplace=True)
+        return df

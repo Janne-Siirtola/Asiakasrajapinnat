@@ -16,6 +16,8 @@ from .data_builder import DataBuilder
 from .data_editor import DataEditor
 from .main_config import load_main_config
 from .storage_handler import StorageHandler
+from .esrs_data_parser import EsrsDataParser
+from .database_handler import DatabaseHandler
 
 
 # Silence the Blob SDK’s HTTP logs
@@ -48,7 +50,9 @@ def load_customers_from_config(
     return customers
 
 
-def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
+def process_customer(
+    customer: Customer, src_stg: StorageHandler, db: DatabaseHandler
+) -> None:
     """Process a single customer and upload the resulting file."""
     if not customer.config.enabled:
         logging.info(
@@ -72,23 +76,35 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
         .drop_unmapped_columns()
         .reorder_columns()
         .rename_and_cast_datatypes()
+        .format_date_and_time()
+        .normalize_null_values()
         .validate_final_df()
         .df
     )
 
-    ts = get_timestamp(strftime="%Y-%m-%d_%H-%M-%S")
+    db.upsert_rows(customer.config.name, df_final)
+    full_df = db.fetch_dataframe(customer.config.name)
+    esrs_parser = EsrsDataParser(full_df)
+    esrs_json = esrs_parser.parse()
+
+    # Handle excluded base columns after upserting so
+    # all needed columns are present in the database.
+    df_final = editor.drop_excluded_columns()
+
+    ts = get_timestamp(strftime="%Y-%m-%d_%H%M")
 
     builder = DataBuilder(customer)
+    blob_name_base = f"tapahtumat_{ts}"
     if customer.config.file_format.lower() == "csv":
         data = builder.build_csv(
             df_final, encoding=customer.config.file_encoding)
-        blob_name = f"tapahtumat_{customer.config.name}_{ts}.csv"
+        blob_name = blob_name_base + ".csv"
         content_settings = ContentSettings(
             content_type=f"text/csv; charset={customer.config.file_encoding}"
         )
     elif customer.config.file_format.lower() == "json":
         data = builder.build_json(df_final)
-        blob_name = f"tapahtumat_{customer.config.name}_{ts}.json"
+        blob_name = blob_name_base + ".json"
         content_settings = ContentSettings(
             content_type=f"application/octet-stream; charset={customer.config.file_encoding}"
         )
@@ -98,6 +114,17 @@ def process_customer(customer: Customer, src_stg: StorageHandler) -> None:
     dst_stg = StorageHandler(
         customer.config.destination_container, verify_existence=True)
     dst_stg.upload_blob(blob_name, data, content_settings=content_settings)
+
+    esrs_blob = f"esrs_report.json"
+    esrs_bytes = json.dumps(esrs_json, ensure_ascii=False).encode("utf-8")
+    dst_stg.upload_blob(
+        esrs_blob,
+        esrs_bytes,
+        content_settings=ContentSettings(
+            content_type="application/json; charset=utf-8"
+        ),
+    )
+
     logging.info("Processed customer %s successfully.", customer.config.name)
 
 
@@ -119,9 +146,11 @@ def main(mytimer: func.TimerRequest) -> None:
         customers = load_customers_from_config(maincfg.base_columns, conf_stg)
         logging.info("Loaded %d customers from config.", len(customers))
 
+        db = DatabaseHandler(base_columns=maincfg.base_columns)
+
         for customer in customers:
             try:
-                process_customer(customer, src_stg)
+                process_customer(customer, src_stg, db)
             except ValueError as err:
                 logging.error(
                     "Error processing customer %s: %s",

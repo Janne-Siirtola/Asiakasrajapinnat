@@ -171,6 +171,7 @@
                   <select name="extra_dtype">
                     <option value="string">String</option>
                     <option value="float">Float</option>
+                    <option value="int">Integer</option>
                   </select>
                 </div>
               </div>
@@ -196,7 +197,7 @@
                 <input
                   type="checkbox"
                   name="exclude_columns"
-                  value="{{ key }}">
+                  value="{{ col.name }}">
                 {{ col.name }}
               </label>
               {% endfor %}
