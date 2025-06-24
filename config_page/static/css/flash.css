@@ -22,9 +22,14 @@
 
 .flash-close {
   position: absolute;
-  top: 50%;
   right: 10px;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin: auto 0;         /* vertically center regardless of line-height */
+  padding: 0;             /* ensure X button isn't offset by page button styles */
+  display: flex;
+  align-items: center;    /* center the × glyph within the button */
+  justify-content: center;
   background: none;
   border: none;
   font-size: 1.25em;
