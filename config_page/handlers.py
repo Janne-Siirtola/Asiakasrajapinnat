@@ -202,24 +202,52 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
                 logging.error("Failed to delete customer '%s': %s", result, e)
                 flash(messages, "error",
                       f"Failed to delete customer '{result}': {e}")
+        elif method == "update_enabled":
+            for cname, state in result.items():
+                try:
+                    raw = conf_stg.download_blob(
+                        f"customer_config/{cname}.json")
+                    cfg = json.loads(raw)
+                    cfg["enabled"] = bool(state)
+                    conf_stg.upload_blob(
+                        blob_name=f"customer_config/{cname}.json",
+                        data=json.dumps(
+                            cfg, ensure_ascii=False).encode("utf-8"),
+                        overwrite=True,
+                        content_settings=ContentSettings(
+                            content_type="application/json; charset=utf-8"
+                        ),
+                    )
+                except (AzureError, json.JSONDecodeError) as e:
+                    logging.error(
+                        "Failed to update enabled for '%s': %s", cname, e)
+                    flash(messages, "error",
+                          f"Failed to update '{cname}': {e}")
 
         error_occurred = any(f["category"] == "error" for f in messages)
-
+        next_method = method
         if not error_occurred:
             if method == "create_customer":
                 flash(messages, "success",
-                    f"Customer '{name}' created successfully.")
+                    f"Asiakas '{name}' luotu onnistuneesti.")
+                next_method = "create_customer"
             elif method == "edit_customer":
                 flash(messages, "success",
-                    f"Customer '{name}' updated successfully.")
+                    f"Asiakas '{name}' päivitetty onnistuneesti.")
+                next_method = "edit_customer"
             elif method == "delete_customer":
                 flash(messages, "success",
-                    f"Customer '{result}' deleted successfully.")
+                    f"Asiakas '{result}' poistettu onnistuneesti.")
+                next_method = "edit_customer"
             elif method == "edit_base_columns":
-                flash(messages, "success", "Base columns updated successfully.")
+                flash(messages, "success", "Perussarakkeet päivitetty.")
+                next_method = "edit_base_columns"
+            elif method == "update_enabled":
+                flash(messages, "success", "Asiakkaiden tilat päivitetty.")
+                next_method = "edit_customer"
 
         token, cookie_val = generate_csrf_token()
-        context = prepare_template_context(method="home", messages=messages, csrf_token=token)
+        context = prepare_template_context(method=next_method, messages=messages, csrf_token=token)
         context["headers"] = {
             "Set-Cookie": f"csrf_token={cookie_val}; HttpOnly; Path=/"
         }

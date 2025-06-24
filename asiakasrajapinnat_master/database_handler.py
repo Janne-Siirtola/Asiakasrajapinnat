@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import importlib
 from urllib import parse
+from sqlalchemy import Identity
 
 
 
@@ -86,6 +87,11 @@ class DatabaseHandler:
     # -- internal Azure operations -------------------------------------
     def _get_columns_config(self, columns: Dict[str, Dict[str, str]]):
         cols: List[dict] = []
+        cols.append({
+            "name": "Id",
+            "type_": self.sa.Integer,
+            "kwargs": {"primary_key": True, "autoincrement": True}
+        })
         cols.append({
             "name": "TapahtumaId",
             "type_": self.sa.String(255),
@@ -175,7 +181,7 @@ class DatabaseHandler:
         src = f"[{schema}].[{staging}]"
         meta = self.sa.MetaData(schema=schema)
         tbl = self.sa.Table(table_name, meta, autoload_with=engine)
-        all_cols = [c.name for c in tbl.columns]
+        all_cols = [c.name for c in tbl.columns if c.name.lower() != "id"]
         non_pk_cols = [c for c in all_cols if c != pk_col]
 
         update_set = ",\n    ".join(f"t.[{c}] = s.[{c}]" for c in non_pk_cols)
@@ -263,6 +269,7 @@ class DatabaseHandler:
                 df = self._fetch_dataframe_sql(table_name=table)
             else:
                 df = self.driver.fetch_dataframe(table_name=table)
+            self.logger.info("Fetched %d rows from table %s", len(df), table)
             return df
         except Exception as err:
             self.logger.exception(

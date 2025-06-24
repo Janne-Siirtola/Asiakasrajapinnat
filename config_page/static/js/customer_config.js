@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!customersDataEl) return; // not on the edit page
 
   const customers   = JSON.parse(customersDataEl.textContent);
+  const listForm    = document.getElementById("enabledForm");
   const listTitle   = document.getElementById("listTitle");
   const customerUl  = document.getElementById("customerList");
   const form        = document.getElementById("editForm");
@@ -56,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn   = document.getElementById("cancelBtn");
   const deleteBtn   = document.getElementById("deleteBtn");
   const methodInput = document.getElementById("methodInput");
+  const statusInput = document.getElementById("statusInput");
+  const switches    = document.querySelectorAll(".enabled-switch");
 
   /* helpers */
   const $ = id => form.querySelector("#" + id);
@@ -137,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.updateExcludeCount();
 
+    if (listForm) listForm.hidden = true;
     customerUl.hidden = true;
     listTitle.hidden  = true;
     form.hidden       = false;
@@ -146,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* cancel */
   cancelBtn.onclick = () => {
     form.hidden       = true;
+    if (listForm) listForm.hidden = false;
     customerUl.hidden = false;
     listTitle.hidden  = false;
   };
@@ -154,11 +159,21 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.addEventListener('click', () => {
       const name = fields.name.value;
       if (!name) return;
-      if (confirm(`Poista asiakas '${name}'? Tätä toimintoa ei voi perua.` + 
+      if (confirm(`Poista asiakas '${name}'? Tätä toimintoa ei voi perua.` +
         '\n\nTämä toiminto poistaa vain asiakkaan json-konfiguraatiotiedoston, mutta ei lähde- tai kohdekonttia. Poista lähde- ja kohdekontit erikseen, jos ne eivät ole enää tarpeellisia.')) {
         if (methodInput) methodInput.value = 'delete_customer';
         form.submit();
       }
+    });
+  }
+
+  if (listForm) {
+    listForm.addEventListener('submit', () => {
+      const states = {};
+      switches.forEach(sw => {
+        states[sw.dataset.name] = sw.checked;
+      });
+      if (statusInput) statusInput.value = JSON.stringify(states);
     });
   }
 })();

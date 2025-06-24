@@ -32,7 +32,6 @@
       {% for msg in messages %}
       <div class="flash {{ msg.category }}">
         {{ msg.message }}
-        <!-- add this button: -->
         <button type="button" class="flash-close"
           aria-label="Sulje">&times;</button>
       </div>
@@ -45,15 +44,25 @@
       1. CUSTOMER LIST (only in “edit” mode)
       ───────────────────────────────────────────────────── #}
       {% if method == "edit_customer" %}
-      <h1 id="listTitle">Valitse asiakas</h1>
-      <ul id="customerList" class="customer-list">
-        {% for cust in customers %}
-        <li>
-          <span class="name">{{ cust.name }}</span>
-          <button class="edit-btn" data-name="{{ cust.name }}">Muokkaa</button>
-        </li>
-        {% endfor %}
-      </ul>
+      <form id="enabledForm" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="method" value="update_enabled">
+        <input type="hidden" id="statusInput" name="statuses">
+        <h1 id="listTitle">Valitse asiakas</h1>
+        <ul id="customerList" class="customer-list">
+          {% for cust in customers %}
+          <li>
+            <span class="name">{{ cust.name }}</span>
+            <label class="switch">
+              <input type="checkbox" class="enabled-switch" data-name="{{ cust.name }}" {% if cust.enabled %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+            <button type="button" class="edit-btn" data-name="{{ cust.name }}">Muokkaa</button>
+          </li>
+          {% endfor %}
+        </ul>
+        <button type="submit" id="saveListBtn" class="submit-btn" style="margin-top:8px">Tallenna</button>
+      </form>
       {% endif %}
 
       {# ─────────────────────────────────────────────────────

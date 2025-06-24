@@ -1,4 +1,5 @@
 from config_page import form_parser
+import json
 import sys
 import os
 
@@ -139,3 +140,12 @@ def test_edit_customer_parsing():
     assert method == "edit_customer"
     assert result["name"] == "newname"
     assert result["original_name"] == "oldname"
+
+
+def test_update_enabled_parsing():
+    data = json.dumps({"foo": True, "bar": False}, separators=(",", ":"))
+    body = f"method=update_enabled&statuses={data}"
+    method, result = form_parser.parse_form_data(body, [])
+
+    assert method == "update_enabled"
+    assert result == {"foo": True, "bar": False}

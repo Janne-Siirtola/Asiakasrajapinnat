@@ -67,9 +67,9 @@ class EsrsDataParser:
 
     def _build_model(self, df: pd.DataFrame) -> EsrsDataModel:
         tuoteryhmat_loppukasittely = [
-            "AS",  # Asbesti
+            "AS",   # Asbesti
             "KAA",  # Kaatopaikkajate (sis. lasikuitu)
-            "VI"  # Villa
+            "VI"    # Villa
         ]
 
         mat = df["Materiaalihyotyaste"]

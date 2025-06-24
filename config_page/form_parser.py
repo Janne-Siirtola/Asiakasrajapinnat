@@ -1,5 +1,6 @@
 """Form data parsing utilities for the configuration page."""
 
+import json
 import logging
 import re
 from typing import Any, Dict, List, Tuple
@@ -145,6 +146,14 @@ def parse_form_data(
     if method == "delete_customer":
         name = parsed.get("name", [""])[0].strip().lower()
         return method, name
+
+    if method == "update_enabled":
+        statuses_raw = parsed.get("statuses", ["{}"])[0]
+        try:
+            statuses = json.loads(statuses_raw) if statuses_raw else {}
+        except json.JSONDecodeError as exc:
+            raise InvalidInputError("Invalid statuses") from exc
+        return method, statuses
 
     if method not in ["create_customer", "edit_customer"]:
         raise InvalidInputError("Invalid method")
