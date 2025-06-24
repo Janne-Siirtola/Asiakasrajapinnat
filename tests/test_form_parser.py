@@ -21,14 +21,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 def test_edit_base_columns_parsing(monkeypatch):
     body = (
         "method=edit_base_columns&"
-        "key=foo&name=Foo&dtype=int&decimals=&"
-        "key=bar&name=Bar&dtype=float&decimals=2"
+        "key=foo&name=Foo&dtype=int&decimals=&length=&"
+        "key=bar&name=Bar&dtype=float&decimals=2&length=&"
+        "key=baz&name=Baz&dtype=string&decimals=&length=10"
     )
     method, result = form_parser.parse_form_data(body, [])
     assert method == "edit_base_columns"
     assert result == {
         "foo": {"name": "Foo", "dtype": "int"},
         "bar": {"name": "Bar", "dtype": "float", "decimals": 2},
+        "baz": {"name": "Baz", "dtype": "string", "length": 10},
     }
 
 

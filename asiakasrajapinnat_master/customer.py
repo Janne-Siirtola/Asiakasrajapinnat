@@ -38,8 +38,8 @@ class Customer:
 
         self.mappings = DataMappings()
 
-        self.generate_combined_columns()
-        self.generate_data_maps()
+        self._generate_combined_columns()
+        self._generate_data_maps()
 
     def get_data(self, stg: StorageHandler, stg_prefix: Optional[str] = None) -> pd.DataFrame:
         """Load the newest CSV file from the customer's source container."""
@@ -81,7 +81,7 @@ class Customer:
                          delimiter=';')
         return df
 
-    def generate_combined_columns(self) -> None:
+    def _generate_combined_columns(self) -> None:
         """
         Generate a dictionary of allowed columns based on the customer's
         base_columns and extra_columns.
@@ -102,7 +102,7 @@ class Customer:
                 logging.info(
                     "Duplicate key '%s' found in extra_columns, skipping.", key)
 
-    def generate_data_maps(self) -> None:
+    def _generate_data_maps(self) -> None:
         """Create rename, dtype and decimals mappings for processing."""
         # 1) rename mapping: old_key → new_name
         self.mappings.rename_map = {

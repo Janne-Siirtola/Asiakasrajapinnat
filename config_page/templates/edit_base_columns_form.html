@@ -42,6 +42,7 @@
           <span>Sarakeavain</span>
           <span>Näyttönimi</span>
           <span>Tietotyyppi</span>
+          <span>Merkkijonon pituus</span>
           <span>Desimaalit</span>
           <span class="header-spacer"></span>
         </div>
@@ -64,6 +65,10 @@
                 <option value="int" {% if col.dtype == 'int' %}selected{%
                   endif %}>Integer</option>
               </select>
+            </div>
+            <div class="form-group length-group">
+              <input type="number" name="length" min="1"
+                value="{{ col.length | default('') }}">
             </div>
             <div class="form-group decimals-group">
               <input type="number" name="decimals" min="0"
@@ -89,6 +94,9 @@
                 <option value="string">Merkkijono</option>
                 <option value="float">Liukuluku</option>
               </select>
+            </div>
+            <div class="form-group length-group">
+              <input type="number" name="length" min="1">
             </div>
             <div class="form-group decimals-group">
               <input type="number" name="decimals" min="0">

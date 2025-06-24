@@ -37,7 +37,8 @@
         },
         "TAPTyyppi": {
             "name": "Tyyppi",
-            "dtype": "int"
+            "dtype": "string",
+            "length": 50
         },
         "TAPNimi": {
             "name": "Nimike",

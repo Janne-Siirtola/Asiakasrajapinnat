@@ -94,7 +94,6 @@ class DataEditor:
 
         return self
 
-
     def format_date_and_time(self) -> "DataEditor":
         """Normalize ``Pvm`` and ``Kello`` columns to ISO formats."""
         def fmt_time(t) -> (str | None):
@@ -112,7 +111,7 @@ class DataEditor:
         )
         self.df["Kello"] = self.df["Kello"].apply(fmt_time)
         return self
-    
+
     def normalize_null_values(self) -> "DataEditor":
         """Normalize null values in the DataFrame."""
         self.df = self.df.replace({np.nan: None})

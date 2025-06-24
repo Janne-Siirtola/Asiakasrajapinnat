@@ -79,7 +79,7 @@ class DatabaseHandler:
             for key, cfg in columns.items()
             if cfg.get("name") != "TapahtumaId"
         }
-
+    
     @staticmethod
     def _sanitize(name: str) -> str:
         return name.replace("-", "_").replace(" ", "_")

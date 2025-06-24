@@ -60,13 +60,14 @@
     // show/hide decimals
     const dtypeSelect   = group.querySelector('select[name="dtype"]');
     const decimalsGroup = group.querySelector('.decimals-group');
-    function toggleDecimals() {
-      const show = dtypeSelect.value === 'float';
-      // keep cell width so drag handle lines up regardless of dtype
-      decimalsGroup.style.visibility = show ? 'visible' : 'hidden';
+    const lengthGroup   = group.querySelector('.length-group');
+    function toggleFields() {
+      const val = dtypeSelect.value;
+      decimalsGroup.style.visibility = val === 'float' ? 'visible' : 'hidden';
+      lengthGroup.style.visibility   = val === 'string' ? 'visible' : 'hidden';
     }
-    dtypeSelect.addEventListener('change', toggleDecimals);
-    toggleDecimals();
+    dtypeSelect.addEventListener('change', toggleFields);
+    toggleFields();
 
     // DnD setup
     addDnDHandlers(group);

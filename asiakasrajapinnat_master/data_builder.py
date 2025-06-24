@@ -15,7 +15,7 @@ class DataBuilder:
     def __init__(self, customer: Customer):
         self.decimals_map = customer.mappings.decimals_map
 
-    def format_json_row(self, row: dict[Hashable, Any]) -> str:
+    def _format_json_row(self, row: dict[Hashable, Any]) -> str:
         """Convert a pandas row to compact JSON without extra spaces."""
         parts = []
         for col, val in row.items():
@@ -36,7 +36,7 @@ class DataBuilder:
         json_data = "["
         rows = df_final.to_dict(orient="records")
         for i, row in enumerate(rows):
-            json_data += self.format_json_row(row) + "\n"
+            json_data += self._format_json_row(row) + "\n"
             if i < len(rows) - 1:
                 json_data += ","
         json_data += "]"

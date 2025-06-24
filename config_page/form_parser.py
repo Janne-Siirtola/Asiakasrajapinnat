@@ -27,9 +27,10 @@ def _parse_base_columns(
     names = parsed.get("name", [])
     dtypes = parsed.get("dtype", [])
     decimals = parsed.get("decimals", [])
+    lengths = parsed.get("length", [])
 
     basecols: Dict[str, Dict[str, Any]] = {}
-    for k, n, dt, dec in zip(keys, names, dtypes, decimals):
+    for k, n, dt, dec, length in zip(keys, names, dtypes, decimals, lengths):
         k = k.strip()
         if not k:
             continue
@@ -40,6 +41,12 @@ def _parse_base_columns(
             except ValueError:
                 flash(messages, "error",
                       f"Invalid decimal value for column '{k}': {dec.strip()}")
+        if dt.strip() == "string" and length.strip():
+            try:
+                col["length"] = int(length)
+            except ValueError:
+                flash(messages, "error",
+                      f"Invalid length value for column '{k}': {length.strip()}")
         basecols[k] = col
     return basecols
 

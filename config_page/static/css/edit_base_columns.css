@@ -45,7 +45,7 @@ h1 {
 .base-columns-group,
 .base-columns-header {
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr 100px 40px;
+  grid-template-columns: 80px 1fr 1fr 1fr 100px 100px 40px;
   align-items: center;
   column-gap: 10px;
 }
