@@ -58,7 +58,7 @@ def process_customer(
         logging.info(
             "Skipping customer %s as it is not enabled.", customer.config.name
         )
-        return "not_enabled"
+        return "not_enabled", 400
 
     logging.info("Processing customer %s...", customer.config.name)
 
@@ -67,7 +67,7 @@ def process_customer(
     df = customer.get_data(src_stg, stg_prefix)
     if df.empty:
         logging.info("No data found for customer %s.", customer.config.name)
-        return "no_data"
+        return "no_data", 404
 
     editor = DataEditor(df=df, customer=customer)
     df_edited = (
@@ -128,7 +128,7 @@ def process_customer(
     )
 
     logging.info("Processed customer %s successfully.", customer.config.name)
-    return "success"
+    return "success", 200
 
 
 def main(mytimer: func.TimerRequest) -> None:

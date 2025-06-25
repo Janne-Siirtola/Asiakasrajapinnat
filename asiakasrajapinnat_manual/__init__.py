@@ -49,7 +49,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         for customer in filtered_customers:
-            resp = process_customer(customer, src_stg, db)
+            resp, status = process_customer(customer, src_stg, db)
 
     except Exception as e:
         logging.error("Error processing customers: %s", e)
@@ -60,5 +60,5 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     return func.HttpResponse(
         resp,
-        status_code=200
+        status_code=status
     )
