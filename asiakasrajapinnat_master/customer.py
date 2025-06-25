@@ -64,13 +64,6 @@ class Customer:
 
         # 3) download it
         data = stg.download_blob(latest.name)
-        logging.info(
-            "Loaded %d bytes from %s/%s (last modified: %s)",
-            len(data),
-            stg.container_name,
-            latest.name,
-            latest.last_modified,
-        )
 
         # 4) Save the file name so it can be moved later to history
         self.file_in_process = latest.name
@@ -78,7 +71,18 @@ class Customer:
         # 5) parse and return
         df = pd.read_csv(io.BytesIO(data),
                          encoding='ISO-8859-1',
-                         delimiter=';')
+                         delimiter=';',
+                         decimal=',',
+                         low_memory=False)
+        
+        logging.info(
+            "Loaded %d rows from %s/%s (last modified: %s)",
+            len(df),
+            stg.container_name,
+            latest.name,
+            latest.last_modified,
+        )
+        
         return df
 
     def _generate_combined_columns(self) -> None:

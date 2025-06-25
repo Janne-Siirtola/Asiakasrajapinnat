@@ -78,6 +78,7 @@ def process_customer(
         .rename_and_cast_datatypes()
         .format_date_and_time()
         .normalize_null_values()
+        .clean_tapahtuma_id()
         .validate_final_df()
         .df
     )

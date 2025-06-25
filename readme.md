@@ -6,9 +6,9 @@ Asiakasrajapinnat is a collection of Azure Functions that process and deliver cu
 
 ```
 asiakasrajapinnat_master/   # Core pipeline and helpers
+asiakasrajapinnat_manual/   # Http endpoint that allows user to run the master pipeline manually through config_page.
 config_page/                # HTTP endpoint for managing configuration
-Config/                     # JSON configuration files
-local_tests/                # Scripts for running the pipeline locally
+example_configs/            # Example JSON configuration files
 tests/                      # Pytest based unit tests
 ```
 

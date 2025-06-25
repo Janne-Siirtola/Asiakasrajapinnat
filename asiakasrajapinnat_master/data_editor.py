@@ -33,13 +33,13 @@ class DataEditor:
         if col not in self.df.columns:
             raise KeyError(f"Expected konserni-column '{col}' not found")
 
-        allowed = {str(i) for i in self.customer.config.konserni}
-        unique_vals = set(self.df[col])
+        allowed = set(self.customer.config.konserni)
+        unique_vals = set(self.df[col].astype(int))
 
         if not unique_vals.issubset(allowed):
             extra = unique_vals - allowed
             raise ValueError(
-                f"Invalid konserni values found: {extra}")
+                f"Invalid konserni values found: {extra}\nAllowed values: {allowed}")
 
         # all good, return self unchanged
         return self
@@ -117,6 +117,26 @@ class DataEditor:
         self.df = self.df.replace({np.nan: None})
         return self
 
+    def clean_tapahtuma_id(self) -> "DataEditor":
+        """Clean the TapahtumaId column."""
+        empty_mask = self.df["TapahtumaId"].isna() | (self.df["TapahtumaId"].astype(str) == "")
+        n_empty = empty_mask.sum()
+        if n_empty > 0:
+            # Remove rows with empty TapahtumaId
+            logging.warning(f"Removing {n_empty} empty TapahtumaId rows.")
+            self.df = self.df[~empty_mask]
+            self.target_row_count -= n_empty
+
+        dup_mask = self.df["TapahtumaId"].duplicated(keep=False)
+        if dup_mask.any():
+            dup_rows = dup_mask.sum()
+            dup_values = self.df.loc[dup_mask, 'TapahtumaId'].nunique()
+            logging.warning(f"Removing {dup_values} duplicate TapahtumaId values.")
+            self.df = self.df[~dup_mask].reset_index(drop=True)
+            self.target_row_count -= dup_rows
+
+        return self
+
     def validate_final_df(self) -> "DataEditor":
         """
         Validate the final DataFrame.
@@ -132,6 +152,7 @@ class DataEditor:
                 f"These base columns were not found in the DataFrame: {missing}"
             )
 
+        # Check for empty DataFrame
         if self.df.empty:
             error_logs.append("DataFrame is empty after processing")
 
@@ -160,6 +181,13 @@ class DataEditor:
         if list(self.df.index) != list(range(len(self.df))):
             error_logs.append(
                 "DataFrame index is not a simple RangeIndex 0…n-1")
+            
+        # Check if column TapahtumaId is present and doesn't have any NaN values or duplicates
+        if "TapahtumaId" in self.df.columns:
+            if self.df["TapahtumaId"].isnull().any():
+                error_logs.append("Column 'TapahtumaId' contains NaN values")
+            if self.df["TapahtumaId"].duplicated().any():
+                error_logs.append("Column 'TapahtumaId' contains duplicates")
 
         if error_logs:
             raise ValueError(

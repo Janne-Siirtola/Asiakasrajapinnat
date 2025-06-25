@@ -1,6 +1,6 @@
 pylint_all.txt
 esrs_e5_esimerkki.json
-local_tests/results/
+local_tests/
 *.csv
 *.xlsx
 
