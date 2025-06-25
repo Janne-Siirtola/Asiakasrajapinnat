@@ -1,0 +1,20 @@
+/* collapse the borders so you get single lines */
+table {
+border-collapse: collapse;
+width: 100%;           /* optional */
+}
+
+/* draw a 1px line around every cell */
+th, td {
+border: 1px solid #ccc;
+padding: 8px;          /* optional for spacing */
+}
+  /* center text in the first 2 columns (both header and body) */
+  td:nth-child(-n+2) {
+    text-align: center;
+  }
+
+/* optional: stripe the rows */
+tbody tr:nth-child(odd) {
+background: #f9f9f9;
+}

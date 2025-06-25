@@ -24,3 +24,4 @@
 .card.create   { border-top: 4px solid #0faa0f; }
 .card.edit     { border-top: 4px solid #0078d4; }
 .card.basecols { border-top: 4px solid #d48b00; }
+.card.manual   { border-top: 4px solid #d40000; }

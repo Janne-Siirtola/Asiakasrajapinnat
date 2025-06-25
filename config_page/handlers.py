@@ -55,6 +55,10 @@ def prepare_template_context(
         template_name = "index.html"
         css_blocks = get_css_blocks(file_specific_styles=["index.css"])
         js_blocks = get_js_blocks()
+    elif method == "manual_run":
+        template_name = "manual_run.html"
+        css_blocks = get_css_blocks(file_specific_styles=["customer_config.css", "manual_run.css"])
+        js_blocks = get_js_blocks(file_specific_scripts=["manual_run.js"])
     else:
         logging.error("Unknown method '%s' in request", method)
         raise ClientError(f"Unknown method '{method}'")

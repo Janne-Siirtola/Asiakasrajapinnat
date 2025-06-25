@@ -20,10 +20,6 @@ The timer triggered function loads customer definitions from the `Config` contai
 
 The HTTP endpoint provides a simple web interface for editing customer configurations and the list of base columns. The UI is rendered with Jinja templates and includes CSRF protection. Form submissions are validated and stored as JSON files inside the configuration container.
 
-### Local testing
-
-The `local_tests/run_workflow.py` script demonstrates how to execute the pipeline locally. It reads configuration files from the `Config` directory and expects a `local.settings.json` file for environment variables such as database credentials and storage connection strings.
-
 ## Running tests
 
 Install the required packages and run the test suite with `pytest`:
