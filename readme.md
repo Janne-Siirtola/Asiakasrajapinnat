@@ -1,22 +1,32 @@
-# TimerTrigger - Python
+# Asiakasrajapinnat
 
-The `TimerTrigger` makes it incredibly easy to have your functions executed on a schedule. This sample demonstrates a simple use case of calling your function every 5 minutes.
+Asiakasrajapinnat is a collection of Azure Functions that process and deliver customer data files. The solution is primarily composed of a timer triggered pipeline that reads raw CSV data from Azure Blob Storage, normalises and validates it and finally publishes the result both to another storage container and to an Azure SQL database. In addition the project contains an HTTP based configuration UI used for managing customer specific settings.
 
-## How it works
+## Repository layout
 
-For a `TimerTrigger` to work, you provide a schedule in the form of a [cron expression](https://en.wikipedia.org/wiki/Cron#CRON_expression)(See the link for full details). A cron expression is a string with 6 separate expressions which represent a given schedule via patterns. The pattern we use to represent every 5 minutes is `0 */5 * * * *`. This, in plain text, means: "When seconds is equal to 0, minutes is divisible by 5, for any hour, day of the month, month, day of the week, or year".
+```
+asiakasrajapinnat_master/   # Core pipeline and helpers
+config_page/                # HTTP endpoint for managing configuration
+Config/                     # JSON configuration files
+local_tests/                # Scripts for running the pipeline locally
+tests/                      # Pytest based unit tests
+```
 
-## Learn more
+### Timer triggered pipeline (`asiakasrajapinnat_master`)
 
-<TODO> Documentation
+The timer triggered function loads customer definitions from the `Config` container in Azure Storage. For each customer it fetches the newest CSV file from the configured source container, runs a series of cleaning and validation steps (implemented in `data_editor.py`) and writes the cleaned records into an Azure SQL table. The pipeline then builds the final output file in CSV or JSON format using `data_builder.py` and uploads it back to storage together with an ESRS report in JSON format.
+
+### Configuration page (`config_page`)
+
+The HTTP endpoint provides a simple web interface for editing customer configurations and the list of base columns. The UI is rendered with Jinja templates and includes CSRF protection. Form submissions are validated and stored as JSON files inside the configuration container.
 
 ## Running tests
 
-Install dependencies (preferably in a virtual environment) and run `pytest` from the repository root:
+Install the required packages and run the test suite with `pytest`:
 
 ```bash
-pip install -r Asiakasrajapinnat-AZFunction/requirements.txt pytest
+pip install -r requirements.txt
 pytest
 ```
 
-The repository includes a `pytest.ini` that configures the test discovery.
+The tests cover data processing helpers, storage and database integrations as well as the configuration utilities.

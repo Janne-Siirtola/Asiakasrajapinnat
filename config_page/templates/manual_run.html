@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fi">
+  <head>
+    <meta charset="utf-8">
+    <title>Manuaalinen ajo</title>
+    {% if css_blocks %}
+      <style>
+        {%- for block in css_blocks %}
+          {{ block | safe }}
+        {%- endfor %}
+      </style>
+    {% endif %}
+  </head>
+  <body>
+    {% if html_blocks %}
+    {% for block in html_blocks if block.name == 'navbar.html' %}
+    {{ block.content | safe }}
+    {% endfor %}
+    {% endif %}
+
+    <div class="container">
+      <h1>Valitse suoritettavat asiakkaat</h1>
+      <form id="manualRunForm">
+        <ul class="customer-list">
+          {% for cust in customers %}
+          <li>
+            <label
+              for="customer-{{ loop.index }}"
+              style="display:block; width: 100%; cursor:pointer; padding: 5px;"
+            >
+              <input
+                type="checkbox"
+                id="customer-{{ loop.index }}"
+                name="customer"
+                value="{{ cust.name }}"
+              >
+              {{ cust.name }}
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+        <button type="submit" class="submit-btn">Suorita</button>
+      </form>
+      <div id="statusContainer"></div>
+    </div>
+    {% if js_blocks %}
+    <script>
+      {%- for block in js_blocks %}
+        {{ block | safe }}
+      {%- endfor %}
+    </script>
+    {% endif %}
+  </body>
+</html>
