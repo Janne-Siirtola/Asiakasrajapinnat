@@ -37,6 +37,7 @@ class Customer:
         self.exclude_columns = config.exclude_columns or []
 
         self.mappings = DataMappings()
+        self.file_in_process = None
 
         self._generate_combined_columns()
         self._generate_data_maps()
@@ -71,9 +72,8 @@ class Customer:
             latest.last_modified,
         )
 
-        # 4) move it into history
-        stg.move_file_to_dir(
-            latest.name, target_dir=history_dir, overwrite=True)
+        # 4) Save the file name so it can be moved later to history
+        self.file_in_process = latest.name
 
         # 5) parse and return
         df = pd.read_csv(io.BytesIO(data),

@@ -126,10 +126,31 @@ def process_customer(
             content_type="application/json; charset=utf-8"
         ),
     )
+    
+    # Finally if nothing went wrong, move the src file to history
+    src_stg.move_file_to_dir(
+        source_blob_name=customer.file_in_process,
+        target_dir=stg_prefix + "history/",
+        overwrite=True
+    )
 
     logging.info("Processed customer %s successfully.", customer.config.name)
     return "success"
 
+def reprocess_customers(
+    customers: List[Customer], src_stg: StorageHandler, db: DatabaseHandler
+) -> List[Customer] | None:
+    """Reprocess failed customers."""
+    failed_customers = []
+    
+    for customer in customers:
+        try:
+            process_customer(customer, src_stg, db)
+        except Exception as e:
+            logging.exception("Error reprocessing customers: %s", e)
+            failed_customers.append(customer)
+
+    return failed_customers
 
 def main(mytimer: func.TimerRequest) -> None:
     """Entry point for the timer triggered function."""
@@ -151,25 +172,37 @@ def main(mytimer: func.TimerRequest) -> None:
 
         db = DatabaseHandler(base_columns=maincfg.base_columns)
 
+        failed_customers = []
         for customer in customers:
             try:
                 process_customer(customer, src_stg, db)
-            except ValueError as err:
-                logging.error(
+            except Exception as err:
+                logging.exception(
                     "Error processing customer %s: %s",
                     customer.config.name,
                     err,
                 )
+                failed_customers.append(customer)
+                continue
+        
+        retry_count = 2
+        if failed_customers:
+            logging.info("Retrying failed customers...")
+            for _ in range(retry_count):
+                logging.info("Retry attempt %d", _ + 1)
+                failed_customers = reprocess_customers(failed_customers, src_stg, db)
+                if not failed_customers:
+                    break
 
         elapsed_time = time.perf_counter() - start_time
 
         logging.info("Process completed successfully at %s.", get_timestamp())
         logging.info("Elapsed time: %.2f seconds.", elapsed_time)
-    except Exception:
+    except Exception as e:
         # ----------------------------------------
         # 5. FAILURE: OUTPUT LOG + STACK TRACE
         # ----------------------------------------
-        logging.error("Unexpected error occurred: %s", traceback.format_exc())
+        logging.exception("Unexpected error occurred: %s", e)
 
         # Re-raise the exception to ensure the function is marked as failed
         raise
