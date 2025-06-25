@@ -13,6 +13,7 @@ class MainConfig:
     """Configuration values shared between all customers."""
 
     base_columns: Dict[str, Dict[str, str]]
+    emails: list[str] = None
 
 
 def load_main_config(conf_stg: StorageHandler) -> MainConfig:
@@ -22,4 +23,7 @@ def load_main_config(conf_stg: StorageHandler) -> MainConfig:
         raise ValueError(
             "main_config.json is empty or not found in the storage.")
     raw = json.loads(json_data)
-    return MainConfig(base_columns=raw.get("base_columns", {}))
+    return MainConfig(
+        base_columns=raw.get("base_columns", {}),
+        emails=raw.get("emails", [])
+    )

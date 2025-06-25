@@ -63,6 +63,13 @@ def _parse_konserni_list(raw_value: str, messages: List[Dict[str, str]]) -> List
                   "Please enter numeric values only.")
     return konserni_list
 
+def _parse_email_list(raw_value: str) -> List[str]:
+    """Parse a comma separated list of email addresses."""
+    emails = [email.strip() for email in raw_value.split(",") if email.strip()]
+    if not emails:
+        raise InvalidInputError("Email list cannot be empty.")
+    return emails
+
 
 def _parse_extra_columns(parsed: Dict[str, List[str]]) -> Dict[str, Dict[str, str]]:
     """Extract extra column configuration from parsed form data."""
@@ -148,7 +155,13 @@ def parse_form_data(
     logging.info("Form method received: %s", method)
     if method == "edit_base_columns":
         basecols = _parse_base_columns(parsed, messages)
-        return method, basecols
+        email_raw = parsed.get("emails", [""])[0].strip()
+        emails = _parse_email_list(email_raw)
+        result = {
+            "base_columns": basecols,
+            "emails": emails,
+        }
+        return method, result
 
     if method == "delete_customer":
         name = parsed.get("name", [""])[0].strip().lower()

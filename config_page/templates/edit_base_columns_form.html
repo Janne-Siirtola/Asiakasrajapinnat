@@ -37,6 +37,14 @@
       <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="method" value="edit_base_columns">
+
+        <div class="form-group">
+          <label for="emails">Sähköpostit virheviesteille</label>
+          <input type="text" id="emails" name="emails"  
+          placeholder="esim. user@example.com, admin@example.com" required value="{{ emails | join(', ') }}">
+          <small>Erottele osoitteet pilkuilla</small>
+        </div>
+
         <div class="base-columns-header">
           <span class="header-spacer"></span>
           <span>Sarakeavain</span>

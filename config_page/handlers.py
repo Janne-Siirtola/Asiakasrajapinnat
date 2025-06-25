@@ -77,7 +77,8 @@ def prepare_template_context(
         "customers": customers,
         "messages": messages,
         "base_columns": main_config.base_columns,
-        "csrf_token": csrf_token,
+        "emails": main_config.emails,
+        "csrf_token": csrf_token
     }
 
 
@@ -144,7 +145,10 @@ def handle_post(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         if method == "edit_base_columns":
-            new_cfg = {"base_columns": result}
+            new_cfg = {
+                "emails": result.get("emails", []),
+                "base_columns": result.get("base_columns", [])
+            }
             conf_stg.upload_blob(
                 "main_config.json",
                 json.dumps(new_cfg, ensure_ascii=False).encode("utf-8"),

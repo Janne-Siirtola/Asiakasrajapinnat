@@ -10,6 +10,7 @@ from asiakasrajapinnat_master import load_customers_from_config, process_custome
 from asiakasrajapinnat_master.main_config import load_main_config
 from asiakasrajapinnat_master.storage_handler import StorageHandler
 from asiakasrajapinnat_master.database_handler import DatabaseHandler
+from asiakasrajapinnat_master.email_service import send_email
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
