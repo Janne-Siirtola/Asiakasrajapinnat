@@ -14,7 +14,6 @@ from urllib import parse
 from sqlalchemy import Identity
 
 
-
 class DatabaseHandler:
     """Singleton wrapper around an Azure SQL database."""
 
@@ -32,19 +31,20 @@ class DatabaseHandler:
         self,
         base_columns: Dict[str, Dict[str, str]] | None = None,
         driver: object | None = None,
-        local_test: bool = False,
+        pw_login: bool = False,
     ) -> None:
         if self._initialized:
             return
         if driver is not None:
             self.driver = driver
-            self.logger.info("Initialized DatabaseHandler with external driver")
+            self.logger.info(
+                "Initialized DatabaseHandler with external driver")
         else:
             sa = importlib.import_module("sqlalchemy")
             server = os.getenv("SQL_SERVER")
             database = os.getenv("SQL_DATABASE")
             odbc_driver = "{ODBC Driver 18 for SQL Server}"
-            if local_test:
+            if pw_login:
                 usr = os.getenv("SQL_USERNAME")
                 pwd = os.getenv("SQL_PASSWORD")
                 conn_str = (
@@ -79,7 +79,7 @@ class DatabaseHandler:
             for key, cfg in columns.items()
             if cfg.get("name") != "TapahtumaId"
         }
-    
+
     @staticmethod
     def _sanitize(name: str) -> str:
         return name.replace("-", "_").replace(" ", "_")
@@ -113,7 +113,8 @@ class DatabaseHandler:
                     type_ = self.sa.Float()
             elif dtype_s.startswith("string"):
                 length = col.get("length")
-                type_ = self.sa.String(int(length)) if length else self.sa.String(255)
+                type_ = self.sa.String(
+                    int(length)) if length else self.sa.String(255)
             else:
                 type_ = self.sa.String(255)
 
@@ -133,7 +134,8 @@ class DatabaseHandler:
         metadata = self.sa.MetaData(schema=self.schema)
         tbl = self.sa.Table(table_name, metadata)
         for cfg in self._get_columns_config(columns):
-            tbl.append_column(self.sa.Column(cfg["name"], cfg["type_"], **cfg["kwargs"]))
+            tbl.append_column(self.sa.Column(
+                cfg["name"], cfg["type_"], **cfg["kwargs"]))
         metadata.create_all(self.engine)
 
         if exists:
@@ -150,12 +152,12 @@ class DatabaseHandler:
                     name = cfg["name"]
                     if name in existing_cols:
                         continue
-                    ddl_type = cfg["type_"].compile(dialect=self.engine.dialect)
+                    ddl_type = cfg["type_"].compile(
+                        dialect=self.engine.dialect)
                     stmt = self.sa.text(
                         f"ALTER TABLE [{self.schema}].[{table_name}] ADD [{name}] {ddl_type}"
                     )
                     conn.execute(stmt)
-
 
     def _upsert_with_staging(self, table_name: str, df: pd.DataFrame, pk_col: str = "TapahtumaId") -> None:
         staging = f"{table_name}_stg"
@@ -174,7 +176,8 @@ class DatabaseHandler:
                 chunksize=2000,
             )
         except Exception as err:
-            self.logger.exception("Failed to load staging table %s: %s", staging, err)
+            self.logger.exception(
+                "Failed to load staging table %s: %s", staging, err)
             raise
 
         target = f"[{schema}].[{table_name}]"
@@ -204,9 +207,11 @@ class DatabaseHandler:
             with engine.begin() as conn:
                 conn.execute(self.sa.text(merge_sql))
                 conn.execute(self.sa.text(f"DROP TABLE {schema}.{staging}"))
-            self.logger.info("Upserted %d rows into table %s", len(df), table_name)
+            self.logger.info("Upserted %d rows into table %s",
+                             len(df), table_name)
         except Exception as err:
-            self.logger.exception("Failed to upsert into table %s: %s", table_name, err)
+            self.logger.exception(
+                "Failed to upsert into table %s: %s", table_name, err)
             raise
 
     def _fetch_dataframe_sql(self, table_name: str) -> pd.DataFrame:
@@ -217,7 +222,8 @@ class DatabaseHandler:
             )
             return df
         except Exception as err:
-            self.logger.exception("Failed to fetch data from table %s: %s", table_name, err)
+            self.logger.exception(
+                "Failed to fetch data from table %s: %s", table_name, err)
             raise
 
     # -- public API -------------------------------------------------------
@@ -239,7 +245,7 @@ class DatabaseHandler:
         except Exception as err:
             self.logger.exception("Failed to ensure table %s: %s", table, err)
             raise
-        
+
     def upsert_rows(
         self,
         customer: str,
@@ -247,7 +253,8 @@ class DatabaseHandler:
     ) -> None:
         table = self._sanitize(customer)
         if "TapahtumaId" not in df.columns:
-            self.logger.error("DataFrame missing required 'TapahtumaId' column")
+            self.logger.error(
+                "DataFrame missing required 'TapahtumaId' column")
             raise ValueError("DataFrame must contain 'TapahtumaId' column.")
         try:
             self.ensure_table(customer=customer)
@@ -261,7 +268,7 @@ class DatabaseHandler:
                 "Failed to upsert rows for customer %s: %s", customer, err
             )
             raise
-        
+
     def fetch_dataframe(self, customer: str) -> pd.DataFrame:
         table = self._sanitize(customer)
         try:
@@ -276,5 +283,3 @@ class DatabaseHandler:
                 "Failed to fetch dataframe for customer %s: %s", customer, err
             )
             raise
-
-

@@ -1,6 +1,11 @@
 """Run the asiakasrajapinnat_master workflow using local example data."""
 
 from __future__ import annotations
+from asiakasrajapinnat_master.customer import Customer, CustomerConfig
+from asiakasrajapinnat_master.data_builder import DataBuilder
+from asiakasrajapinnat_master.data_editor import DataEditor
+from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
+from asiakasrajapinnat_master.database_handler import DatabaseHandler
 
 import json
 import os
@@ -11,11 +16,6 @@ import logging
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from asiakasrajapinnat_master.database_handler import DatabaseHandler
-from asiakasrajapinnat_master.esrs_data_parser import EsrsDataParser
-from asiakasrajapinnat_master.data_editor import DataEditor
-from asiakasrajapinnat_master.data_builder import DataBuilder
-from asiakasrajapinnat_master.customer import Customer, CustomerConfig
 
 
 logging.basicConfig(
@@ -122,14 +122,10 @@ def run():
 
         # df_final = filter_month(df_final, month=5, year=2025, exclude=False)
 
-        db = DatabaseHandler(base_columns=base_columns, local_test=True)
-        
+        db = DatabaseHandler(base_columns=base_columns, pw_login=True)
+
         db.upsert_rows(customer.config.name, df_final)
         full_df = db.fetch_dataframe(customer.config.name)
-
-        out_path = results_dir / f"TESTST.csv"
-        out_path.write_text(full_df.to_csv(
-            index=False, encoding=customer.config.file_encoding, sep=";"), encoding=customer.config.file_encoding)
 
         builder = DataBuilder(customer)
         if customer.config.file_format.lower() == "csv":

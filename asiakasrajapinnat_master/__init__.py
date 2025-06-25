@@ -52,13 +52,13 @@ def load_customers_from_config(
 
 def process_customer(
     customer: Customer, src_stg: StorageHandler, db: DatabaseHandler
-) -> None:
+) -> str | None:
     """Process a single customer and upload the resulting file."""
     if not customer.config.enabled:
         logging.info(
             "Skipping customer %s as it is not enabled.", customer.config.name
         )
-        return
+        return "not_enabled"
 
     logging.info("Processing customer %s...", customer.config.name)
 
@@ -67,7 +67,7 @@ def process_customer(
     df = customer.get_data(src_stg, stg_prefix)
     if df.empty:
         logging.info("No data found for customer %s.", customer.config.name)
-        return
+        return "no_data"
 
     editor = DataEditor(df=df, customer=customer)
     df_edited = (
@@ -128,6 +128,7 @@ def process_customer(
     )
 
     logging.info("Processed customer %s successfully.", customer.config.name)
+    return "success"
 
 
 def main(mytimer: func.TimerRequest) -> None:
